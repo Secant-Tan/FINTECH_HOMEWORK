@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <rect width="320" height="220" rx="22" fill="#E5F2F8"/>
+  <circle cx="270" cy="44" r="42" fill="#F7FBFD"/>
+  <circle cx="50" cy="178" r="38" fill="#F7FBFD"/>
+  <g transform="translate(126 45) rotate(8)">
+    <rect width="72" height="132" rx="36" fill="#2A2A2A" opacity=".18" x="4" y="8"/>
+    <rect width="72" height="132" rx="36" fill="#FDFDFD"/>
+    <path d="M0 66h72v30a36 36 0 0 1-72 0z" fill="#C7B7AE"/>
+    <path d="M20 28c18-18 38-6 40 12" fill="none" stroke="#FFE600" stroke-width="8" stroke-linecap="round"/>
+  </g>
+  <text x="34" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#202124">Sleep</text>
+</svg>
