@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <rect width="320" height="220" rx="22" fill="#FFF1B8"/>
+  <circle cx="268" cy="48" r="42" fill="#FFFFFF" opacity=".55"/>
+  <path d="M101 90c-18-12-14-42 10-48 14-3 26 4 32 16h34c6-12 18-19 32-16 24 6 28 36 10 48l-78 78c-10 10-26 10-36 0z" fill="#FFFFFF" stroke="#202124" stroke-width="8" stroke-linejoin="round"/>
+  <text x="34" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#202124">Bone</text>
+</svg>

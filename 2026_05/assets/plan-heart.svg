@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <rect width="320" height="220" rx="22" fill="#C8EDA4"/>
+  <circle cx="272" cy="48" r="42" fill="#FFFFFF" opacity=".55"/>
+  <path d="M160 170s-78-44-78-96c0-27 21-47 47-47 15 0 26 7 31 18 5-11 16-18 31-18 26 0 47 20 47 47 0 52-78 96-78 96z" fill="#FFE600" stroke="#202124" stroke-width="8" stroke-linejoin="round"/>
+  <path d="M82 112h44l18-32 28 64 18-32h48" fill="none" stroke="#202124" stroke-width="8" stroke-linecap="round" stroke-linejoin="round"/>
+  <text x="34" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#202124">Heart</text>
+</svg>

@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <rect width="320" height="220" rx="22" fill="#EAF5EF"/>
+  <circle cx="268" cy="50" r="42" fill="#FFFFFF" opacity=".6"/>
+  <path d="M105 70c74 10 116 66 84 116-52-12-88-62-84-116z" fill="#FFE600" stroke="#202124" stroke-width="8"/>
+  <path d="M124 92c22 18 40 44 50 76" fill="none" stroke="#202124" stroke-width="7" stroke-linecap="round"/>
+  <path d="M134 124h-34M154 148h-32M146 108h36" fill="none" stroke="#202124" stroke-width="7" stroke-linecap="round"/>
+  <text x="34" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#202124">Fiber</text>
+</svg>

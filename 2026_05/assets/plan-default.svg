@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <rect width="320" height="220" rx="22" fill="#F1F1F1"/>
+  <circle cx="270" cy="48" r="42" fill="#FFFFFF"/>
+  <g transform="translate(124 48)">
+    <rect width="72" height="124" rx="36" fill="#FFFFFF" stroke="#202124" stroke-width="8"/>
+    <path d="M0 62h72v26a36 36 0 0 1-72 0z" fill="#FFE600"/>
+  </g>
+  <text x="34" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#202124">Care</text>
+</svg>
