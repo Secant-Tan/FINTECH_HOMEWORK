@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 320 220">
+  <rect width="320" height="220" rx="22" fill="#EAF5EF"/>
+  <circle cx="265" cy="52" r="44" fill="#FFFFFF" opacity=".7"/>
+  <circle cx="58" cy="178" r="34" fill="#FFFFFF" opacity=".7"/>
+  <ellipse cx="160" cy="116" rx="76" ry="48" fill="#FFFFFF"/>
+  <circle cx="160" cy="116" r="32" fill="#FFE600"/>
+  <circle cx="160" cy="116" r="15" fill="#202124"/>
+  <path d="M72 116c44-58 132-58 176 0" fill="none" stroke="#202124" stroke-width="10" stroke-linecap="round"/>
+  <text x="34" y="48" font-family="Arial, sans-serif" font-size="24" font-weight="700" fill="#202124">Eye</text>
+</svg>
