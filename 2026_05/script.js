@@ -546,8 +546,58 @@ function renderScoreList(scores) {
     }).join("");
 }
 
-function getVisualAsset(key) {
-  return "assets/wellness-report-panels.png";
+function getVisualTile(key, usedTiles) {
+  const tileMap = {
+    fitness: ["tile2-basketball", "tile-soccer", "tile2-soccer", "tile-run"],
+    heart: ["tile2-cycle", "tile-run", "tile-hike"],
+    bone: ["tile-sun", "tile2-hike", "tile2-stretch"],
+    immune: ["tile-hike", "tile2-stretch", "tile2-meal"],
+    skin: ["tile2-sunscreen", "tile-sunscreen", "tile-skincare"],
+    antioxidant: ["tile2-meal", "tile-skincare", "tile-meal"],
+    eye: ["tile2-eye", "tile-eye", "tile-calm"],
+    sleep: ["tile2-sleep", "tile-sleep", "tile-calm"],
+    stress: ["tile2-calm", "tile-calm", "tile2-hike"],
+    fiber: ["tile2-meal", "tile-meal", "tile-breakfast"],
+    digestive: ["tile2-water", "tile-water", "tile-meal"],
+    sugar: ["tile2-breakfast", "tile-breakfast", "tile2-meal"],
+    hydration: ["tile2-water", "tile-water", "tile2-stretch"],
+    mineral: ["tile2-stretch", "tile-soccer", "tile2-basketball"],
+    liver: ["tile2-breakfast", "tile-breakfast", "tile2-water"]
+  };
+  const orderedTiles = [
+    "tile-run",
+    "tile-soccer",
+    "tile-sun",
+    "tile-sunscreen",
+    "tile-sleep",
+    "tile-eye",
+    "tile-meal",
+    "tile-water",
+    "tile-calm",
+    "tile-breakfast",
+    "tile-hike",
+    "tile-skincare",
+    "tile2-stretch",
+    "tile2-cycle",
+    "tile2-basketball",
+    "tile2-meal",
+    "tile2-eye",
+    "tile2-sleep",
+    "tile2-calm",
+    "tile2-water",
+    "tile2-sunscreen",
+    "tile2-hike",
+    "tile2-soccer",
+    "tile2-breakfast"
+  ];
+  const preferredTiles = tileMap[key] || ["tile-breakfast"];
+
+  if (!usedTiles) return preferredTiles[0];
+  const selected = preferredTiles.find((tile) => !usedTiles.has(tile))
+    || orderedTiles.find((tile) => !usedTiles.has(tile))
+    || preferredTiles[0];
+  usedTiles.add(selected);
+  return selected;
 }
 
 function getBmiLabel(bmi) {
@@ -655,11 +705,11 @@ function renderResults() {
     </div>
   `;
 
+  const usedVisualTiles = new Set();
   recommendationGrid.innerHTML = recommendations.length
     ? recommendations.map((item) => `
       <article class="recommend-card plan-card">
-        <div class="plan-visual ${item.key}">
-          <img src="${getVisualAsset(item.key)}" alt="${item.title}营养方向插画">
+        <div class="plan-visual ${getVisualTile(item.key, usedVisualTiles)}" aria-label="${item.title}营养方向插画">
         </div>
         <div class="plan-content">
         <span class="level ${item.level.className}">${item.level.label} · ${item.score} 分</span>

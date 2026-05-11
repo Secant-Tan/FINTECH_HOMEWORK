@@ -1183,7 +1183,7 @@ input {
 
 .plan-card {
   display: grid;
-  grid-template-columns: 220px minmax(0, 1fr);
+  grid-template-columns: minmax(150px, 220px) minmax(0, 1fr);
   gap: 24px;
   align-items: stretch;
   padding: 22px;
@@ -1191,25 +1191,24 @@ input {
 
 .plan-visual {
   position: relative;
-  min-height: 220px;
+  width: 100%;
+  aspect-ratio: 3 / 4;
+  min-height: 292px;
   border-radius: 20px;
   background:
-    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)),
-    url("assets/wellness-report-panels.png");
-  background-size: 200% 200%;
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08)),
+    url("assets/wellness-report-portrait-atlas-12.png");
+  background-size: 400% 300%;
   background-position: 0 0;
   overflow: hidden;
-}
-
-.plan-visual img {
-  display: none;
 }
 
 .plan-visual::after {
   content: "";
   position: absolute;
   inset: 0;
-  background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.26));
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,0) 36%, rgba(0,0,0,.10));
   pointer-events: none;
 }
 
@@ -1222,37 +1221,52 @@ input {
   height: 44px;
   border-radius: 50%;
   background: var(--yellow);
-  box-shadow: 0 8px 20px rgba(0,0,0,.14);
+  border: 4px solid rgba(255,255,255,.88);
+  box-shadow: 0 10px 22px rgba(0,0,0,.12);
 }
 
-.plan-visual.eye,
-.plan-visual.hydration,
-.plan-visual.sleep {
-  background-position: 100% 100%;
+.tile-run { background-position: 0% 0%; }
+.tile-soccer { background-position: 33.333% 0%; }
+.tile-sun { background-position: 66.666% 0%; }
+.tile-sunscreen { background-position: 100% 0%; }
+.tile-sleep { background-position: 0% 50%; }
+.tile-eye { background-position: 33.333% 50%; }
+.tile-meal { background-position: 66.666% 50%; }
+.tile-water { background-position: 100% 50%; }
+.tile-calm { background-position: 0% 100%; }
+.tile-breakfast { background-position: 33.333% 100%; }
+.tile-hike { background-position: 66.666% 100%; }
+.tile-skincare { background-position: 100% 100%; }
+
+.tile2-stretch,
+.tile2-cycle,
+.tile2-basketball,
+.tile2-meal,
+.tile2-eye,
+.tile2-sleep,
+.tile2-calm,
+.tile2-water,
+.tile2-sunscreen,
+.tile2-hike,
+.tile2-soccer,
+.tile2-breakfast {
+  background-image:
+    linear-gradient(180deg, rgba(255,255,255,.04), rgba(0,0,0,.08)),
+    url("assets/wellness-report-portrait-atlas-24-b.png");
 }
 
-.plan-visual.bone,
-.plan-visual.fitness,
-.plan-visual.heart {
-  background-position: 0 0;
-}
-
-.plan-visual.sugar,
-.plan-visual.digestive,
-.plan-visual.fiber {
-  background-position: 0 100%;
-}
-
-.plan-visual.stress,
-.plan-visual.skin,
-.plan-visual.antioxidant {
-  background-position: 100% 100%;
-}
-
-.plan-visual.immune,
-.plan-visual.mineral {
-  background-position: 100% 0;
-}
+.tile2-stretch { background-position: 0% 0%; }
+.tile2-cycle { background-position: 33.333% 0%; }
+.tile2-basketball { background-position: 66.666% 0%; }
+.tile2-meal { background-position: 100% 0%; }
+.tile2-eye { background-position: 0% 50%; }
+.tile2-sleep { background-position: 33.333% 50%; }
+.tile2-calm { background-position: 66.666% 50%; }
+.tile2-water { background-position: 100% 50%; }
+.tile2-sunscreen { background-position: 0% 100%; }
+.tile2-hike { background-position: 33.333% 100%; }
+.tile2-soccer { background-position: 66.666% 100%; }
+.tile2-breakfast { background-position: 100% 100%; }
 
 .plan-content h3 {
   margin-bottom: 12px;
@@ -1260,7 +1274,7 @@ input {
 }
 
 .plan-content p {
-  max-width: 680px;
+  max-width: 100%;
   font-size: 18px;
 }
 
@@ -1357,9 +1371,14 @@ input {
 
 @media (max-width: 860px) {
   .hero,
-  .report-score,
-  .plan-card {
+  .report-score {
     grid-template-columns: 1fr;
+  }
+
+  .plan-card {
+    grid-template-columns: minmax(108px, 32vw) minmax(0, 1fr);
+    gap: 14px;
+    padding: 14px;
   }
 
   .assessment {
@@ -1391,7 +1410,23 @@ input {
   }
 
   .plan-visual {
-    min-height: 140px;
+    min-height: 156px;
+    border-radius: 16px;
+  }
+
+  .plan-visual::before {
+    left: 10px;
+    top: 10px;
+    width: 32px;
+    height: 32px;
+  }
+
+  .plan-content h3 {
+    font-size: 24px;
+  }
+
+  .plan-content p {
+    font-size: 15px;
   }
 
   .insight-grid {
