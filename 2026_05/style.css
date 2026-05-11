@@ -422,6 +422,36 @@ select {
   padding: 16px;
 }
 
+.question-meta {
+  width: fit-content;
+  margin: 0 auto 14px;
+  border-radius: 999px;
+  padding: 6px 12px;
+  background: #ffffff;
+  color: #666666;
+  font-size: 13px;
+  font-weight: 900;
+}
+
+.targeted-question .question-meta {
+  background: var(--yellow);
+  color: #111111;
+}
+
+.question-summary {
+  max-width: 760px;
+  margin: 8px auto 0;
+  padding: 20px;
+  border-radius: 22px;
+  background: #ffffff;
+}
+
+.question-summary p {
+  margin-bottom: 0;
+  color: #666666;
+  line-height: 1.7;
+}
+
 .question-card:hover,
 .field:hover {
   transform: translateY(-1px);
@@ -513,6 +543,9 @@ select {
   display: grid;
   grid-template-columns: 1fr;
   gap: 20px;
+  max-width: 1100px;
+  margin-left: auto;
+  margin-right: auto;
   margin-top: 22px;
 }
 
@@ -543,6 +576,7 @@ select {
 .recommendation-area {
   display: grid;
   gap: 16px;
+  width: 100%;
 }
 
 .safety-card {
@@ -555,7 +589,7 @@ select {
 
 .recommendation-grid {
   display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
+  grid-template-columns: 1fr;
   gap: 16px;
 }
 
@@ -996,7 +1030,7 @@ input {
 }
 
 .result-layout {
-  grid-template-columns: 300px minmax(0, 1fr);
+  grid-template-columns: 1fr;
 }
 
 .summary-panel,
@@ -1077,9 +1111,16 @@ input {
   padding: 24px;
 }
 
+.safety-card,
+.analysis-card,
+.recommend-card,
+.action-card {
+  width: 100%;
+}
+
 .report-score {
   display: grid;
-  grid-template-columns: 1fr;
+  grid-template-columns: minmax(0, 1fr) minmax(260px, 320px);
   gap: 22px;
   align-items: center;
 }
@@ -1142,52 +1183,111 @@ input {
 
 .plan-card {
   display: grid;
-  grid-template-columns: 150px minmax(0, 1fr);
-  gap: 18px;
-  padding: 18px;
+  grid-template-columns: 220px minmax(0, 1fr);
+  gap: 24px;
+  align-items: stretch;
+  padding: 22px;
 }
 
 .plan-visual {
   position: relative;
-  min-height: 168px;
-  border-radius: 14px;
-  background: #f7e1e6;
+  min-height: 220px;
+  border-radius: 20px;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(0,0,0,.08)),
+    url("assets/wellness-report-panels.png");
+  background-size: 200% 200%;
+  background-position: 0 0;
   overflow: hidden;
 }
 
 .plan-visual img {
-  width: 100%;
-  height: 100%;
-  display: block;
-  object-fit: cover;
+  display: none;
+}
+
+.plan-visual::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, rgba(0,0,0,0) 45%, rgba(0,0,0,.26));
+  pointer-events: none;
+}
+
+.plan-visual::before {
+  content: "";
+  position: absolute;
+  left: 16px;
+  top: 16px;
+  width: 44px;
+  height: 44px;
+  border-radius: 50%;
+  background: var(--yellow);
+  box-shadow: 0 8px 20px rgba(0,0,0,.14);
 }
 
 .plan-visual.eye,
 .plan-visual.hydration,
 .plan-visual.sleep {
-  background: #e5f2f8;
+  background-position: 100% 100%;
 }
 
 .plan-visual.bone,
 .plan-visual.fitness,
 .plan-visual.heart {
-  background: #c8eda4;
+  background-position: 0 0;
 }
 
 .plan-visual.sugar,
 .plan-visual.digestive,
 .plan-visual.fiber {
-  background: #fff1b8;
+  background-position: 0 100%;
 }
 
 .plan-visual.stress,
 .plan-visual.skin,
 .plan-visual.antioxidant {
-  background: #f7dce4;
+  background-position: 100% 100%;
+}
+
+.plan-visual.immune,
+.plan-visual.mineral {
+  background-position: 100% 0;
 }
 
 .plan-content h3 {
-  font-size: 26px;
+  margin-bottom: 12px;
+  font-size: 32px;
+}
+
+.plan-content p {
+  max-width: 680px;
+  font-size: 18px;
+}
+
+.insight-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+  margin: 16px 0 6px;
+}
+
+.insight-grid div {
+  border-radius: 16px;
+  padding: 14px;
+  background: #f6f6f6;
+}
+
+.insight-grid strong {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+.insight-grid p {
+  margin: 0;
+  color: #666666;
+  font-size: 15px;
+  line-height: 1.6;
 }
 
 @keyframes floatLemon {
@@ -1293,10 +1393,14 @@ input {
   .plan-visual {
     min-height: 140px;
   }
+
+  .insight-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
-@media (min-width: 980px) {
+@media (max-width: 980px) {
   .report-score {
-    grid-template-columns: minmax(360px, 1fr) 280px;
+    grid-template-columns: 1fr;
   }
 }

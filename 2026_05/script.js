@@ -21,6 +21,15 @@ const frequencyOptions = [
   [4, "几乎总是"]
 ];
 
+const goalLabels = {
+  energy: "提升精力",
+  skin: "皮肤与状态",
+  eye: "护眼疲劳",
+  fitness: "运动恢复",
+  immunity: "免疫支持",
+  general: "综合健康"
+};
+
 const healthRiskQuestions = [
   { id: "diabetes", text: "是否有糖尿病、血糖异常或糖化血红蛋白偏高？" },
   { id: "heartDisease", text: "是否有高血压、高血脂、心脏疾病或家族心血管风险？" },
@@ -61,32 +70,50 @@ const goalSpecificQuestions = {
   energy: [
     { id: "energyAfternoonCrash", text: "我下午或饭后容易明显犯困、脑子变慢。", dimensions: ["sleep", "sugar"] },
     { id: "energyBreakfast", text: "我经常早餐吃得很少，或只喝咖啡/饮料应付。", dimensions: ["sugar", "digestive"] },
-    { id: "energyProteinLow", text: "我每餐很少有鸡蛋、奶、鱼肉、豆制品等蛋白质来源。", dimensions: ["fitness", "sleep"] }
+    { id: "energyProteinLow", text: "我每餐很少有鸡蛋、奶、鱼肉、豆制品等蛋白质来源。", dimensions: ["fitness", "sleep"] },
+    { id: "energyIronSignal", text: "我容易头晕、手脚凉、脸色差，或曾担心过贫血。", dimensions: ["mineral", "sleep"] },
+    { id: "energyMealGap", text: "我两餐之间经常间隔很久，容易饿到发慌或暴食。", dimensions: ["sugar", "digestive"] },
+    { id: "energyOverwork", text: "我连续学习或工作后很难恢复，周末也缓不过来。", dimensions: ["stress", "sleep"] }
   ],
   skin: [
     { id: "skinDry", text: "我的皮肤容易干燥、暗沉，或换季状态波动明显。", dimensions: ["skin", "hydration"] },
     { id: "skinSun", text: "我白天外出较多，但防晒和遮阳做得不稳定。", dimensions: ["skin", "antioxidant"] },
-    { id: "skinSugar", text: "我压力大或吃甜食后，皮肤状态更容易变差。", dimensions: ["skin", "sugar"] }
+    { id: "skinSugar", text: "我压力大或吃甜食后，皮肤状态更容易变差。", dimensions: ["skin", "sugar"] },
+    { id: "skinAcne", text: "我近期更容易长痘、泛红，或皮肤屏障感觉不稳定。", dimensions: ["skin", "stress"] },
+    { id: "skinProtein", text: "我为了控制体重，经常少吃肉蛋奶豆等蛋白质来源。", dimensions: ["skin", "fitness"] },
+    { id: "skinOmega", text: "我很少吃鱼类、坚果、亚麻籽或橄榄油等脂肪来源。", dimensions: ["skin", "heart"] }
   ],
   eye: [
     { id: "eyeScreenHours", text: "我每天看电脑、平板或手机超过 6 小时。", dimensions: ["eye", "sleep"] },
     { id: "eyeDryNight", text: "晚上或空调环境下，我的眼睛更容易干涩。", dimensions: ["eye", "hydration"] },
-    { id: "eyeDark", text: "我经常在光线较暗的环境下看屏幕。", dimensions: ["eye", "sleep"] }
+    { id: "eyeDark", text: "我经常在光线较暗的环境下看屏幕。", dimensions: ["eye", "sleep"] },
+    { id: "eyeBreak", text: "我很少主动让眼睛休息，一忙起来会连续盯屏很久。", dimensions: ["eye", "stress"] },
+    { id: "eyeLeafy", text: "我很少吃深绿色蔬菜、玉米、蛋黄等护眼相关食物。", dimensions: ["eye", "antioxidant"] },
+    { id: "eyeContact", text: "我经常戴隐形眼镜，或眼睛容易受环境刺激。", dimensions: ["eye", "hydration"] }
   ],
   fitness: [
     { id: "fitnessRecovery", text: "运动后酸痛恢复慢，影响下一次训练。", dimensions: ["fitness", "mineral"] },
     { id: "fitnessProtein", text: "我不确定自己每天蛋白质是否吃够。", dimensions: ["fitness"] },
-    { id: "fitnessSweat", text: "我运动时出汗较多，运动后容易口渴或疲惫。", dimensions: ["hydration", "mineral", "fitness"] }
+    { id: "fitnessSweat", text: "我运动时出汗较多，运动后容易口渴或疲惫。", dimensions: ["hydration", "mineral", "fitness"] },
+    { id: "fitnessStrength", text: "我每周有力量训练，但训练后精神和肌肉恢复一般。", dimensions: ["fitness", "sleep"] },
+    { id: "fitnessDietCut", text: "我在减脂或控体重，担心吃多影响目标。", dimensions: ["sugar", "fitness"] },
+    { id: "fitnessCramps", text: "我运动中或夜间偶尔抽筋、肌肉紧绷。", dimensions: ["mineral", "hydration"] }
   ],
   immunity: [
     { id: "immuneSleep", text: "只要连续熬夜或压力大，我就更容易不舒服。", dimensions: ["immune", "sleep", "stress"] },
     { id: "immuneOutdoor", text: "我日常户外活动少，很少晒太阳。", dimensions: ["immune", "bone"] },
-    { id: "immuneProtein", text: "我近期食欲一般，蛋白质和蔬果摄入都不稳定。", dimensions: ["immune", "antioxidant", "fitness"] }
+    { id: "immuneProtein", text: "我近期食欲一般，蛋白质和蔬果摄入都不稳定。", dimensions: ["immune", "antioxidant", "fitness"] },
+    { id: "immuneGut", text: "我肠胃状态不稳定，换季或压力大时更明显。", dimensions: ["immune", "digestive"] },
+    { id: "immuneCrowd", text: "我经常处在人多、通勤、熬夜或高压力环境中。", dimensions: ["immune", "stress"] },
+    { id: "immuneVitaminD", text: "我几乎没有关注过维生素 D、锌或蛋白质摄入是否足够。", dimensions: ["immune", "bone", "mineral"] }
   ],
   general: [
     { id: "generalCheck", text: "我不太清楚自己最近的血糖、血脂、维生素 D 或铁蛋白状态。", dimensions: ["bone", "mineral", "heart"] },
     { id: "generalRoutine", text: "我的作息、三餐和运动经常随工作学习节奏大幅波动。", dimensions: ["sleep", "digestive", "stress"] },
-    { id: "generalSupplement", text: "我曾经断断续续吃过补剂，但不确定是否适合自己。", dimensions: ["mineral", "immune"] }
+    { id: "generalSupplement", text: "我曾经断断续续吃过补剂，但不确定是否适合自己。", dimensions: ["mineral", "immune"] },
+    { id: "generalFamily", text: "家人中有人有三高、心血管、糖尿病或骨质相关问题。", dimensions: ["heart", "sugar", "bone"] },
+    { id: "generalEatingOut", text: "我经常外食或点外卖，很难控制油盐糖和蔬菜量。", dimensions: ["heart", "fiber", "sugar"] },
+    { id: "generalPriority", text: "我希望先知道最值得优先调整的 2-3 个健康习惯。", dimensions: ["stress", "sleep"] }
   ]
 };
 
@@ -95,91 +122,121 @@ const dimensionMeta = {
     title: "睡眠与精力",
     nutrients: ["B 族维生素", "镁", "优质蛋白"],
     foods: ["鸡蛋", "瘦肉", "豆类", "全谷物", "深绿叶菜"],
-    note: "你的睡眠节律或疲劳信号较明显。先稳定睡眠时间、减少晚间咖啡因和屏幕刺激，再考虑辅助营养。"
+    note: "你的睡眠节律或疲劳信号较明显。先稳定睡眠时间、减少晚间咖啡因和屏幕刺激，再考虑辅助营养。",
+    reason: "睡眠不足会影响能量代谢、食欲控制和运动恢复。",
+    action: "先连续 7 天固定起床时间，并把咖啡因尽量放在中午前。"
   },
   eye: {
     title: "屏幕用眼",
     nutrients: ["叶黄素", "玉米黄质", "Omega-3", "维生素 A 食物来源"],
     foods: ["菠菜", "羽衣甘蓝", "玉米", "鸡蛋黄", "深海鱼"],
-    note: "长时间用眼会增加干涩和疲劳感。营养关注可以辅助，但持续疼痛、视力变化应做眼科检查。"
+    note: "长时间用眼会增加干涩和疲劳感。营养关注可以辅助，但持续疼痛、视力变化应做眼科检查。",
+    reason: "屏幕时长、夜间用眼和优质脂肪不足会共同放大眼疲劳。",
+    action: "每 40 分钟离屏 3-5 分钟，并增加深绿叶菜和蛋黄摄入。"
   },
   bone: {
     title: "骨骼与维生素 D",
     nutrients: ["维生素 D", "钙", "镁"],
     foods: ["奶制品", "强化豆奶", "豆腐", "小鱼干", "鸡蛋"],
-    note: "少晒太阳或钙来源不足时，可关注维生素 D 与钙摄入。更稳妥的方式是结合体检指标。"
+    note: "少晒太阳或钙来源不足时，可关注维生素 D 与钙摄入。更稳妥的方式是结合体检指标。",
+    reason: "维生素 D 与钙摄入会影响骨骼、肌肉状态和免疫支持。",
+    action: "优先确认日晒、奶豆制品和维生素 D 检测情况。"
   },
   antioxidant: {
     title: "蔬果与抗氧化",
     nutrients: ["维生素 C", "维生素 E", "多酚", "类胡萝卜素"],
     foods: ["柑橘", "莓果", "彩椒", "坚果", "番茄"],
-    note: "蔬果摄入少或烟草暴露较多时，抗氧化饮食更值得优先补齐。"
+    note: "蔬果摄入少或烟草暴露较多时，抗氧化饮食更值得优先补齐。",
+    reason: "蔬果不足会减少维生素 C、多酚和类胡萝卜素来源。",
+    action: "每天先补齐 2 种颜色的蔬果，再考虑额外补充。"
   },
   heart: {
     title: "心血管饮食",
     nutrients: ["Omega-3", "膳食纤维", "钾来源食物"],
     foods: ["深海鱼", "燕麦", "豆类", "香蕉", "绿叶菜"],
-    note: "重盐、加工食品、久坐或优质脂肪不足会影响心血管饮食质量。若有相关疾病或用药，请先咨询医生。"
+    note: "重盐、加工食品、久坐或优质脂肪不足会影响心血管饮食质量。若有相关疾病或用药，请先咨询医生。",
+    reason: "油盐糖、久坐和 BMI 偏高会共同影响心血管饮食风险。",
+    action: "先把外卖频率、钠摄入和每周运动频率稳定下来。"
   },
   sugar: {
     title: "控糖与稳定能量",
     nutrients: ["膳食纤维", "低 GI 主食", "蛋白质搭配"],
     foods: ["燕麦", "杂豆", "糙米", "希腊酸奶", "坚果"],
-    note: "甜食、含糖饮料和三餐不规律会让能量波动更明显。糖尿病用户不应自行用补剂替代治疗。"
+    note: "甜食、含糖饮料和三餐不规律会让能量波动更明显。糖尿病用户不应自行用补剂替代治疗。",
+    reason: "精制碳水和空腹咖啡会让饥饿感与困倦更明显。",
+    action: "每餐用蛋白质、蔬菜和主食搭配，减少单独喝甜饮。"
   },
   fiber: {
     title: "膳食纤维",
     nutrients: ["膳食纤维", "益生元", "发酵食品"],
     foods: ["燕麦", "豆类", "菌菇", "苹果", "酸奶"],
-    note: "肠胃不规律时可逐步增加纤维和饮水，不建议突然大量补充纤维粉。"
+    note: "肠胃不规律时可逐步增加纤维和饮水，不建议突然大量补充纤维粉。",
+    reason: "纤维和水分不足会让肠道节律、饱腹感和控糖都变差。",
+    action: "从每天多一份豆类或燕麦开始，逐步增加而不是猛加。"
   },
   digestive: {
     title: "肠胃节律",
     nutrients: ["益生元", "膳食纤维", "规律进餐"],
     foods: ["酸奶", "泡菜", "燕麦", "香蕉", "豆类"],
-    note: "三餐不规律、喝水少和低纤维饮食会影响肠胃节律，先把饮食节奏稳住。"
+    note: "三餐不规律、喝水少和低纤维饮食会影响肠胃节律，先把饮食节奏稳住。",
+    reason: "肠胃节律通常受三餐时间、压力、纤维和益生菌食物共同影响。",
+    action: "先固定早餐或午餐时间，并记录一周排便和腹胀情况。"
   },
   stress: {
     title: "压力与恢复",
     nutrients: ["镁", "B 族维生素", "蛋白质"],
     foods: ["坚果", "香蕉", "豆制品", "鸡蛋", "深绿叶菜"],
-    note: "压力高时应同时关注睡眠、运动和情绪支持，补剂不能替代专业心理或医疗帮助。"
+    note: "压力高时应同时关注睡眠、运动和情绪支持，补剂不能替代专业心理或医疗帮助。",
+    reason: "高压力会影响睡眠、食欲、皮肤状态和免疫稳定性。",
+    action: "每天安排 10 分钟低强度散步或拉伸，降低恢复负担。"
   },
   liver: {
     title: "饮酒与肝脏负担",
     nutrients: ["均衡蛋白", "B 族维生素", "抗氧化食物"],
     foods: ["豆类", "鸡蛋", "蔬菜", "莓果", "全谷物"],
-    note: "经常饮酒时最重要的是减少酒精摄入。有肝病或肝功能异常时不建议自行加用补剂。"
+    note: "经常饮酒时最重要的是减少酒精摄入。有肝病或肝功能异常时不建议自行加用补剂。",
+    reason: "酒精会增加肝脏代谢负担，也会影响睡眠质量。",
+    action: "先减少频率和单次量，有肝功能异常时优先咨询医生。"
   },
   skin: {
     title: "皮肤与状态感",
     nutrients: ["维生素 C", "锌", "Omega-3", "胶原蛋白相关蛋白质"],
     foods: ["鱼类", "鸡蛋", "柑橘", "坚果", "豆类"],
-    note: "皮肤状态通常和睡眠、糖摄入、蛋白质与微量元素有关，先处理作息和饮食结构。"
+    note: "皮肤状态通常和睡眠、糖摄入、蛋白质与微量元素有关，先处理作息和饮食结构。",
+    reason: "皮肤状态不是单一维生素问题，常和糖摄入、睡眠、蛋白质和脂肪酸有关。",
+    action: "先减少高糖饮品，补齐蛋白质和深色蔬果。"
   },
   immune: {
     title: "免疫支持",
     nutrients: ["维生素 C", "维生素 D", "锌", "蛋白质"],
     foods: ["柑橘", "鸡蛋", "鱼类", "瘦肉", "豆制品"],
-    note: "换季容易不舒服时，可关注蛋白质、蔬果和维生素 D 状态，但不要追求超高剂量。"
+    note: "换季容易不舒服时，可关注蛋白质、蔬果和维生素 D 状态，但不要追求超高剂量。",
+    reason: "免疫支持依赖蛋白质、维生素 D、锌和睡眠共同作用。",
+    action: "先稳定睡眠和蛋白质摄入，再考虑检测维生素 D。"
   },
   mineral: {
     title: "矿物质与肌肉状态",
     nutrients: ["镁", "钙", "锌", "铁"],
     foods: ["坚果", "奶制品", "红肉", "贝类", "豆类"],
-    note: "抽筋、恢复慢或皮肤头发状态变化可能和矿物质摄入、训练负荷、睡眠有关。铁剂不建议自行长期服用。"
+    note: "抽筋、恢复慢或皮肤头发状态变化可能和矿物质摄入、训练负荷、睡眠有关。铁剂不建议自行长期服用。",
+    reason: "镁、钙、锌、铁都可能相关，但是否补铁尤其需要指标支持。",
+    action: "有贫血或缺铁担心时，优先看血常规、铁蛋白和 B12。"
   },
   hydration: {
     title: "补水与代谢",
     nutrients: ["水分", "电解质", "蔬果来源钾"],
     foods: ["白水", "低糖电解质饮品", "香蕉", "番茄", "绿叶菜"],
-    note: "补水不足会影响精神状态、肠胃节律和皮肤状态。先建立稳定喝水习惯。"
+    note: "补水不足会影响精神状态、肠胃节律和皮肤状态。先建立稳定喝水习惯。",
+    reason: "水分和电解质不足会影响训练感受、肠胃和皮肤状态。",
+    action: "把饮料替换为水或低糖饮品，运动日注意补水。"
   },
   fitness: {
     title: "运动恢复",
     nutrients: ["蛋白质", "肌酸", "镁", "Omega-3"],
     foods: ["鸡蛋", "鱼类", "牛奶", "豆腐", "瘦肉"],
-    note: "有训练目标时，蛋白质、总能量、睡眠和训练计划比单一补剂更关键。"
+    note: "有训练目标时，蛋白质、总能量、睡眠和训练计划比单一补剂更关键。",
+    reason: "训练恢复取决于蛋白质、碳水、睡眠和训练负荷匹配。",
+    action: "先估算每餐蛋白质，再根据训练强度调整碳水和补水。"
   }
 };
 
@@ -223,8 +280,10 @@ function renderHealthRiskQuestions() {
 function renderLifestyleQuestions() {
   const container = document.querySelector("#lifestyleQuestions");
   const questions = getActiveLifestyleQuestions();
+  const selectedGoals = getSelectedGoals().map((goal) => goalLabels[goal]).join("、");
   container.innerHTML = questions.map((question) => `
-    <article class="question-card" data-question="${question.id}">
+    <article class="question-card ${question.sourceGoal ? "targeted-question" : ""}" data-question="${question.id}">
+      <div class="question-meta">${question.sourceGoal ? `专项追问 · ${goalLabels[question.sourceGoal]}` : "基础生活习惯"}</div>
       <div class="question-title">${question.text}</div>
       <div class="option-row frequency">
         ${frequencyOptions.map(([value, label]) => `
@@ -235,7 +294,12 @@ function renderLifestyleQuestions() {
         `).join("")}
       </div>
     </article>
-  `).join("");
+  `).join("") + `
+    <article class="question-card question-summary">
+      <div class="question-meta">本页问题结构</div>
+      <p>已根据你的目标${selectedGoals ? `「${selectedGoals}」` : ""}追加专项问题。本页共 ${questions.length} 个问题，其中 ${questions.filter((question) => question.sourceGoal).length} 个为目标专项追问。</p>
+    </article>
+  `;
 }
 
 function getSelectedGoals() {
@@ -244,7 +308,7 @@ function getSelectedGoals() {
 
 function getActiveLifestyleQuestions() {
   const selectedGoals = getSelectedGoals();
-  const goalQuestions = selectedGoals.flatMap((goal) => goalSpecificQuestions[goal] || []);
+  const goalQuestions = selectedGoals.flatMap((goal) => (goalSpecificQuestions[goal] || []).map((question) => ({ ...question, sourceGoal: goal })));
   const merged = [...lifestyleQuestions, ...goalQuestions];
   return [...new Map(merged.map((question) => [question.id, question])).values()];
 }
@@ -262,6 +326,11 @@ function updateStep() {
   prevBtn.hidden = currentStep === 0;
   nextBtn.hidden = currentStep === steps.length - 1;
   formMessage.textContent = "";
+}
+
+function scrollToSection(element) {
+  const top = element.getBoundingClientRect().top + window.scrollY - 18;
+  window.scrollTo({ top, behavior: "smooth" });
 }
 
 function validateCurrentStep() {
@@ -478,24 +547,7 @@ function renderScoreList(scores) {
 }
 
 function getVisualAsset(key) {
-  const assetMap = {
-    sleep: "sleep",
-    eye: "eye",
-    bone: "bone",
-    antioxidant: "skin",
-    heart: "heart",
-    sugar: "sugar",
-    fiber: "fiber",
-    digestive: "fiber",
-    stress: "stress",
-    liver: "default",
-    skin: "skin",
-    immune: "default",
-    mineral: "fitness",
-    hydration: "default",
-    fitness: "fitness"
-  };
-  return `assets/plan-${assetMap[key] || "default"}.svg`;
+  return "assets/wellness-report-panels.png";
 }
 
 function getBmiLabel(bmi) {
@@ -613,6 +665,16 @@ function renderResults() {
         <span class="level ${item.level.className}">${item.level.label} · ${item.score} 分</span>
         <h3>${item.title}</h3>
         <p>${item.note}</p>
+        <div class="insight-grid">
+          <div>
+            <strong>为什么关注</strong>
+            <p>${item.reason}</p>
+          </div>
+          <div>
+            <strong>执行建议</strong>
+            <p>${item.action}</p>
+          </div>
+        </div>
         <div class="mini-title">可关注营养素</div>
         <div class="nutrients">
           ${item.nutrients.map((nutrient) => `<span class="nutrient">${nutrient}</span>`).join("")}
@@ -654,6 +716,7 @@ document.querySelector("#startBtn").addEventListener("click", () => {
 prevBtn.addEventListener("click", () => {
   currentStep = Math.max(0, currentStep - 1);
   updateStep();
+  scrollToSection(assessment);
 });
 
 nextBtn.addEventListener("click", () => {
@@ -661,6 +724,7 @@ nextBtn.addEventListener("click", () => {
   currentStep = Math.min(steps.length - 1, currentStep + 1);
   if (currentStep === 2) renderLifestyleQuestions();
   updateStep();
+  scrollToSection(assessment);
 });
 
 submitBtn.addEventListener("click", renderResults);
@@ -668,7 +732,7 @@ submitBtn.addEventListener("click", renderResults);
 detailReportBtn.addEventListener("click", () => {
   summaryPage.hidden = true;
   detailReport.hidden = false;
-  detailReport.scrollIntoView({ behavior: "smooth", block: "start" });
+  scrollToSection(results);
 });
 
 document.querySelector("#restartBtn").addEventListener("click", () => {
