@@ -1,4 +1,12 @@
-const stepTitles = ["基本信息", "健康状况", "生活习惯", "生成报告"];
+/* ==============================================
+   Health Supplement Advisor — Application Logic
+   ============================================== */
+
+// ── Constants ──────────────────────────────────
+
+const STORAGE_KEY = "health_supplement_form_data";
+
+const stepTitles = ["基本信息", "健康状况", "生活习惯", "确认提交"];
 const stepHints = [
   "先了解你的基础状态，后面的推荐会更准确。",
   "这一页不会用于诊断，只用于识别补剂选择时需要谨慎的情况。",
@@ -22,12 +30,8 @@ const frequencyOptions = [
 ];
 
 const goalLabels = {
-  energy: "提升精力",
-  skin: "皮肤与状态",
-  eye: "护眼疲劳",
-  fitness: "运动恢复",
-  immunity: "免疫支持",
-  general: "综合健康"
+  energy: "提升精力", skin: "皮肤与状态", eye: "护眼疲劳",
+  fitness: "运动恢复", immunity: "免疫支持", general: "综合健康"
 };
 
 const healthRiskQuestions = [
@@ -117,6 +121,69 @@ const goalSpecificQuestions = {
   ]
 };
 
+// ── Conditional follow-up triggers (Feature 5) ─
+const conditionalFollowUps = [
+  { triggerId: "highSugar", threshold: 3, questions: [
+    { id: "sugarStressLink", text: "我压力大或情绪低落时更想吃甜食或碳水。", dimensions: ["sugar", "stress"] }
+  ]},
+  { triggerId: "stress", threshold: 3, questions: [
+    { id: "stressSleepLink", text: "压力直接影响了我的入睡速度或睡眠质量。", dimensions: ["stress", "sleep"] }
+  ]},
+  { triggerId: "lowExercise", threshold: 3, questions: [
+    { id: "exerciseBarrier", text: "我因为时间不够或太累而很难开始运动。", dimensions: ["fitness", "stress"] }
+  ]},
+  { triggerId: "alcohol", threshold: 3, questions: [
+    { id: "alcoholSocial", text: "我主要在社交应酬场合饮酒，有时难以推辞。", dimensions: ["liver", "stress"] }
+  ]},
+  { triggerId: "smoking", threshold: 2, questions: [
+    { id: "smokingReduce", text: "我考虑过减少烟草/电子烟，但尚未找到替代方式。", dimensions: ["antioxidant", "heart"] }
+  ]},
+  { triggerId: "lowWater", threshold: 3, questions: [
+    { id: "waterForgot", text: "我经常忘记喝水，忙起来半天都不喝一口。", dimensions: ["hydration", "digestive"] }
+  ]}
+];
+
+const allQuestionDefs = [...lifestyleQuestions, ...Object.values(goalSpecificQuestions).flat()];
+const questionTextMap = Object.fromEntries(allQuestionDefs.map(q => [q.id, q.text]));
+
+// ── Supplement interactions (Feature 2) ────────
+const supplementOptions = [
+  { id: "vitaminD", label: "维生素 D" },
+  { id: "calcium", label: "钙片" },
+  { id: "iron", label: "铁剂" },
+  { id: "zinc", label: "锌" },
+  { id: "magnesium", label: "镁" },
+  { id: "omega3", label: "Omega-3 / 鱼油" },
+  { id: "vitaminC", label: "维生素 C" },
+  { id: "bComplex", label: "B 族维生素" },
+  { id: "proteinPowder", label: "蛋白粉" },
+  { id: "creatine", label: "肌酸" }
+];
+
+const supplementInteractions = [
+  { pair: ["calcium", "iron"], severity: "high", text: "钙会抑制铁吸收，建议错开至少 2 小时服用。" },
+  { pair: ["calcium", "zinc"], severity: "medium", text: "高剂量钙可能影响锌吸收，建议分时段服用。" },
+  { pair: ["iron", "zinc"], severity: "medium", text: "铁和锌存在吸收竞争，建议分开在不同餐次服用。" },
+  { pair: ["vitaminC", "iron"], severity: "positive", text: "维生素 C 可以促进铁吸收，搭配服用效果更好。" },
+  { pair: ["vitaminD", "calcium"], severity: "positive", text: "维生素 D 促进钙吸收，协同搭配效果更佳。" },
+  { pair: ["magnesium", "calcium"], severity: "low", text: "镁和钙同服可能相互竞争吸收，睡眠前服镁、餐后服钙是常见做法。" },
+  { pair: ["omega3", "vitaminD"], severity: "positive", text: "鱼油中的脂肪有助于脂溶性维生素 D 的吸收。" },
+  { pair: ["proteinPowder", "iron"], severity: "low", text: "大量乳清蛋白可能影响铁吸收，建议错开 1 小时。" },
+  { pair: ["vitaminD", "vitaminC"], severity: "none", text: "无已知冲突，可正常搭配。" }
+];
+
+function findInteractions(selectedIds) {
+  if (selectedIds.length < 2) return [];
+  const results = [];
+  for (const inter of supplementInteractions) {
+    if (selectedIds.includes(inter.pair[0]) && selectedIds.includes(inter.pair[1])) {
+      results.push(inter);
+    }
+  }
+  return results;
+}
+
+// ── Dimension meta (with meal plans - Feature 7) ─
 const dimensionMeta = {
   sleep: {
     title: "睡眠与精力",
@@ -124,7 +191,8 @@ const dimensionMeta = {
     foods: ["鸡蛋", "瘦肉", "豆类", "全谷物", "深绿叶菜"],
     note: "你的睡眠节律或疲劳信号较明显。先稳定睡眠时间、减少晚间咖啡因和屏幕刺激，再考虑辅助营养。",
     reason: "睡眠不足会影响能量代谢、食欲控制和运动恢复。",
-    action: "先连续 7 天固定起床时间，并把咖啡因尽量放在中午前。"
+    action: "先连续 7 天固定起床时间，并把咖啡因尽量放在中午前。",
+    mealPlan: { breakfast: "全麦吐司+水煮蛋+香蕉", lunch: "糙米饭+煎鸡胸+西兰花", dinner: "小米粥+嫩豆腐+蒜蓉菠菜" }
   },
   eye: {
     title: "屏幕用眼",
@@ -132,7 +200,8 @@ const dimensionMeta = {
     foods: ["菠菜", "羽衣甘蓝", "玉米", "鸡蛋黄", "深海鱼"],
     note: "长时间用眼会增加干涩和疲劳感。营养关注可以辅助，但持续疼痛、视力变化应做眼科检查。",
     reason: "屏幕时长、夜间用眼和优质脂肪不足会共同放大眼疲劳。",
-    action: "每 40 分钟离屏 3-5 分钟，并增加深绿叶菜和蛋黄摄入。"
+    action: "每 40 分钟离屏 3-5 分钟，并增加深绿叶菜和蛋黄摄入。",
+    mealPlan: { breakfast: "燕麦粥+蓝莓+水煮蛋", lunch: "杂粮饭+烤三文鱼+羽衣甘蓝沙拉", dinner: "蒸红薯+虾仁+胡萝卜炒蛋" }
   },
   bone: {
     title: "骨骼与维生素 D",
@@ -140,7 +209,8 @@ const dimensionMeta = {
     foods: ["奶制品", "强化豆奶", "豆腐", "小鱼干", "鸡蛋"],
     note: "少晒太阳或钙来源不足时，可关注维生素 D 与钙摄入。更稳妥的方式是结合体检指标。",
     reason: "维生素 D 与钙摄入会影响骨骼、肌肉状态和免疫支持。",
-    action: "优先确认日晒、奶豆制品和维生素 D 检测情况。"
+    action: "优先确认日晒、奶豆制品和维生素 D 检测情况。",
+    mealPlan: { breakfast: "牛奶+全麦面包+煎蛋", lunch: "麻婆豆腐+青菜+杂粮饭", dinner: "小鱼干紫菜汤+炒芥蓝+蒸蛋羹" }
   },
   antioxidant: {
     title: "蔬果与抗氧化",
@@ -148,7 +218,8 @@ const dimensionMeta = {
     foods: ["柑橘", "莓果", "彩椒", "坚果", "番茄"],
     note: "蔬果摄入少或烟草暴露较多时，抗氧化饮食更值得优先补齐。",
     reason: "蔬果不足会减少维生素 C、多酚和类胡萝卜素来源。",
-    action: "每天先补齐 2 种颜色的蔬果，再考虑额外补充。"
+    action: "每天先补齐 2 种颜色的蔬果，再考虑额外补充。",
+    mealPlan: { breakfast: "希腊酸奶+混合莓果+核桃", lunch: "彩椒炒鸡丁+番茄+糙米饭", dinner: "烤蔬菜拼盘+鹰嘴豆泥+全麦饼" }
   },
   heart: {
     title: "心血管饮食",
@@ -156,7 +227,8 @@ const dimensionMeta = {
     foods: ["深海鱼", "燕麦", "豆类", "香蕉", "绿叶菜"],
     note: "重盐、加工食品、久坐或优质脂肪不足会影响心血管饮食质量。若有相关疾病或用药，请先咨询医生。",
     reason: "油盐糖、久坐和 BMI 偏高会共同影响心血管饮食风险。",
-    action: "先把外卖频率、钠摄入和每周运动频率稳定下来。"
+    action: "先把外卖频率、钠摄入和每周运动频率稳定下来。",
+    mealPlan: { breakfast: "燕麦片+香蕉片+亚麻籽", lunch: "清蒸鱼+蒜蓉西兰花+糙米饭", dinner: "杂豆汤+凉拌黄瓜+全麦馒头" }
   },
   sugar: {
     title: "控糖与稳定能量",
@@ -164,7 +236,8 @@ const dimensionMeta = {
     foods: ["燕麦", "杂豆", "糙米", "希腊酸奶", "坚果"],
     note: "甜食、含糖饮料和三餐不规律会让能量波动更明显。糖尿病用户不应自行用补剂替代治疗。",
     reason: "精制碳水和空腹咖啡会让饥饿感与困倦更明显。",
-    action: "每餐用蛋白质、蔬菜和主食搭配，减少单独喝甜饮。"
+    action: "每餐用蛋白质、蔬菜和主食搭配，减少单独喝甜饮。",
+    mealPlan: { breakfast: "希腊酸奶+坚果+少量燕麦", lunch: "鸡胸肉+藜麦+混合蔬菜", dinner: "豆腐菌菇汤+凉拌海带+杂粮饭" }
   },
   fiber: {
     title: "膳食纤维",
@@ -172,7 +245,8 @@ const dimensionMeta = {
     foods: ["燕麦", "豆类", "菌菇", "苹果", "酸奶"],
     note: "肠胃不规律时可逐步增加纤维和饮水，不建议突然大量补充纤维粉。",
     reason: "纤维和水分不足会让肠道节律、饱腹感和控糖都变差。",
-    action: "从每天多一份豆类或燕麦开始，逐步增加而不是猛加。"
+    action: "从每天多一份豆类或燕麦开始，逐步增加而不是猛加。",
+    mealPlan: { breakfast: "燕麦粥+苹果块+奇亚籽", lunch: "杂豆饭+菌菇炒肉片+青菜", dinner: "红薯+酸奶+凉拌木耳" }
   },
   digestive: {
     title: "肠胃节律",
@@ -180,7 +254,8 @@ const dimensionMeta = {
     foods: ["酸奶", "泡菜", "燕麦", "香蕉", "豆类"],
     note: "三餐不规律、喝水少和低纤维饮食会影响肠胃节律，先把饮食节奏稳住。",
     reason: "肠胃节律通常受三餐时间、压力、纤维和益生菌食物共同影响。",
-    action: "先固定早餐或午餐时间，并记录一周排便和腹胀情况。"
+    action: "先固定早餐或午餐时间，并记录一周排便和腹胀情况。",
+    mealPlan: { breakfast: "香蕉+酸奶+全麦面包", lunch: "泡菜豆腐锅+杂粮饭", dinner: "南瓜小米粥+蒸鱼+焯菠菜" }
   },
   stress: {
     title: "压力与恢复",
@@ -188,7 +263,8 @@ const dimensionMeta = {
     foods: ["坚果", "香蕉", "豆制品", "鸡蛋", "深绿叶菜"],
     note: "压力高时应同时关注睡眠、运动和情绪支持，补剂不能替代专业心理或医疗帮助。",
     reason: "高压力会影响睡眠、食欲、皮肤状态和免疫稳定性。",
-    action: "每天安排 10 分钟低强度散步或拉伸，降低恢复负担。"
+    action: "每天安排 10 分钟低强度散步或拉伸，降低恢复负担。",
+    mealPlan: { breakfast: "香蕉奶昔+全麦吐司+花生酱", lunch: "豆腐炒蛋+菠菜+藜麦", dinner: "南瓜汤+煎三文鱼+芦笋" }
   },
   liver: {
     title: "饮酒与肝脏负担",
@@ -196,7 +272,8 @@ const dimensionMeta = {
     foods: ["豆类", "鸡蛋", "蔬菜", "莓果", "全谷物"],
     note: "经常饮酒时最重要的是减少酒精摄入。有肝病或肝功能异常时不建议自行加用补剂。",
     reason: "酒精会增加肝脏代谢负担，也会影响睡眠质量。",
-    action: "先减少频率和单次量，有肝功能异常时优先咨询医生。"
+    action: "先减少频率和单次量，有肝功能异常时优先咨询医生。",
+    mealPlan: { breakfast: "豆浆+全麦馒头+煮蛋", lunch: "青椒炒肉片+番茄+糙米饭", dinner: "菌菇蔬菜汤+蒸豆腐+拌黄瓜" }
   },
   skin: {
     title: "皮肤与状态感",
@@ -204,7 +281,8 @@ const dimensionMeta = {
     foods: ["鱼类", "鸡蛋", "柑橘", "坚果", "豆类"],
     note: "皮肤状态通常和睡眠、糖摄入、蛋白质与微量元素有关，先处理作息和饮食结构。",
     reason: "皮肤状态不是单一维生素问题，常和糖摄入、睡眠、蛋白质和脂肪酸有关。",
-    action: "先减少高糖饮品，补齐蛋白质和深色蔬果。"
+    action: "先减少高糖饮品，补齐蛋白质和深色蔬果。",
+    mealPlan: { breakfast: "橙子+水煮蛋+核桃", lunch: "三文鱼+牛油果+杂粮饭", dinner: "番茄豆腐汤+清炒芥蓝+蒸鸡胸" }
   },
   immune: {
     title: "免疫支持",
@@ -212,7 +290,8 @@ const dimensionMeta = {
     foods: ["柑橘", "鸡蛋", "鱼类", "瘦肉", "豆制品"],
     note: "换季容易不舒服时，可关注蛋白质、蔬果和维生素 D 状态，但不要追求超高剂量。",
     reason: "免疫支持依赖蛋白质、维生素 D、锌和睡眠共同作用。",
-    action: "先稳定睡眠和蛋白质摄入，再考虑检测维生素 D。"
+    action: "先稳定睡眠和蛋白质摄入，再考虑检测维生素 D。",
+    mealPlan: { breakfast: "猕猴桃+鸡蛋+全麦面包", lunch: "瘦肉炒彩椒+紫菜汤+糙米饭", dinner: "蒜蓉西兰花+煎鱼+红薯" }
   },
   mineral: {
     title: "矿物质与肌肉状态",
@@ -220,7 +299,8 @@ const dimensionMeta = {
     foods: ["坚果", "奶制品", "红肉", "贝类", "豆类"],
     note: "抽筋、恢复慢或皮肤头发状态变化可能和矿物质摄入、训练负荷、睡眠有关。铁剂不建议自行长期服用。",
     reason: "镁、钙、锌、铁都可能相关，但是否补铁尤其需要指标支持。",
-    action: "有贫血或缺铁担心时，优先看血常规、铁蛋白和 B12。"
+    action: "有贫血或缺铁担心时，优先看血常规、铁蛋白和 B12。",
+    mealPlan: { breakfast: "牛奶+全麦面包+杏仁", lunch: "牛肉炒青椒+焯菠菜+糙米饭", dinner: "蛤蜊汤+豆腐+凉拌海带丝" }
   },
   hydration: {
     title: "补水与代谢",
@@ -228,7 +308,8 @@ const dimensionMeta = {
     foods: ["白水", "低糖电解质饮品", "香蕉", "番茄", "绿叶菜"],
     note: "补水不足会影响精神状态、肠胃节律和皮肤状态。先建立稳定喝水习惯。",
     reason: "水分和电解质不足会影响训练感受、肠胃和皮肤状态。",
-    action: "把饮料替换为水或低糖饮品，运动日注意补水。"
+    action: "把饮料替换为水或低糖饮品，运动日注意补水。",
+    mealPlan: { breakfast: "黄瓜+鸡蛋+全麦吐司", lunch: "番茄炒蛋+焯生菜+杂粮饭", dinner: "冬瓜汤+蒸鱼+凉拌莴笋" }
   },
   fitness: {
     title: "运动恢复",
@@ -236,12 +317,25 @@ const dimensionMeta = {
     foods: ["鸡蛋", "鱼类", "牛奶", "豆腐", "瘦肉"],
     note: "有训练目标时，蛋白质、总能量、睡眠和训练计划比单一补剂更关键。",
     reason: "训练恢复取决于蛋白质、碳水、睡眠和训练负荷匹配。",
-    action: "先估算每餐蛋白质，再根据训练强度调整碳水和补水。"
+    action: "先估算每餐蛋白质，再根据训练强度调整碳水和补水。",
+    mealPlan: { breakfast: "牛奶+鸡蛋+燕麦+香蕉", lunch: "鸡胸肉+红薯+西兰花", dinner: "三文鱼+藜麦+菠菜沙拉" }
   }
 };
 
+// ── Complete goal → dimension mapping (fixed) ──
+const goalDimensionBoost = {
+  energy:    { dimensions: ["sleep"],      secondary: ["sugar"] },
+  skin:      { dimensions: ["skin"],       secondary: ["antioxidant", "hydration"] },
+  eye:       { dimensions: ["eye"],        secondary: [] },
+  fitness:   { dimensions: ["fitness"],    secondary: ["mineral"] },
+  immunity:  { dimensions: ["immune"],     secondary: ["antioxidant"] },
+  general:   { dimensions: ["antioxidant", "fiber"], secondary: ["bone"] }
+};
+
+// ── State ──────────────────────────────────────
 let currentStep = 0;
 
+// ── DOM refs ───────────────────────────────────
 const hero = document.querySelector("#hero");
 const assessment = document.querySelector("#assessment");
 const results = document.querySelector("#results");
@@ -251,6 +345,7 @@ const stepTitle = document.querySelector("#stepTitle");
 const stepHint = document.querySelector("#stepHint");
 const stepCount = document.querySelector("#stepCount");
 const progressFill = document.querySelector("#progressFill");
+const progressTrack = document.querySelector(".progress-track");
 const stageItems = [...document.querySelectorAll("#stageMap span")];
 const prevBtn = document.querySelector("#prevBtn");
 const nextBtn = document.querySelector("#nextBtn");
@@ -259,16 +354,74 @@ const formMessage = document.querySelector("#formMessage");
 const summaryPage = document.querySelector("#summaryPage");
 const detailReport = document.querySelector("#detailReport");
 const detailReportBtn = document.querySelector("#detailReportBtn");
+const toast = document.querySelector("#toast");
 
+// ── Toast ──────────────────────────────────────
+let toastTimer;
+function showToast(msg) {
+  clearTimeout(toastTimer);
+  toast.textContent = msg;
+  toast.hidden = false;
+  toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
+}
+
+// ── localStorage ───────────────────────────────
+function saveFormData() {
+  const data = new FormData(form);
+  const obj = {};
+  for (const [key, value] of data.entries()) {
+    if (key === "goals") {
+      if (!obj[key]) obj[key] = [];
+      obj[key].push(value);
+    } else {
+      obj[key] = value;
+    }
+  }
+  localStorage.setItem(STORAGE_KEY, JSON.stringify(obj));
+}
+
+function restoreFormData() {
+  const raw = localStorage.getItem(STORAGE_KEY);
+  if (!raw) return;
+  try {
+    const data = JSON.parse(raw);
+    for (const [key, value] of Object.entries(data)) {
+      if (key === "goals" && Array.isArray(value)) {
+        value.forEach((val) => {
+          const cb = form.querySelector(`input[name="goals"][value="${val}"]`);
+          if (cb) cb.checked = true;
+        });
+        continue;
+      }
+      const el = form.querySelector(`[name="${key}"]`);
+      if (!el) continue;
+      if (el.type === "radio") {
+        const radio = form.querySelector(`input[name="${key}"][value="${value}"]`);
+        if (radio) radio.checked = true;
+      } else {
+        el.value = value;
+      }
+    }
+  } catch (_) { /* ignore */ }
+}
+
+function clearFormData() {
+  localStorage.removeItem(STORAGE_KEY);
+}
+
+form.addEventListener("change", saveFormData);
+form.addEventListener("input", saveFormData);
+
+// ── Rendering helpers ─────────────────────────
 function renderHealthRiskQuestions() {
   const container = document.querySelector("#healthRiskQuestions");
-  container.innerHTML = healthRiskQuestions.map((question) => `
-    <article class="question-card" data-question="${question.id}">
-      <div class="question-title">${question.text}</div>
+  container.innerHTML = healthRiskQuestions.map((q) => `
+    <article class="question-card" data-question="${q.id}">
+      <div class="question-title">${q.text}</div>
       <div class="option-row">
         ${riskOptions.map(([value, label]) => `
           <label class="choice">
-            <input type="radio" name="${question.id}" value="${value}" required>
+            <input type="radio" name="${q.id}" value="${value}" required>
             ${label}
           </label>
         `).join("")}
@@ -280,77 +433,171 @@ function renderHealthRiskQuestions() {
 function renderLifestyleQuestions() {
   const container = document.querySelector("#lifestyleQuestions");
   const questions = getActiveLifestyleQuestions();
-  const selectedGoals = getSelectedGoals().map((goal) => goalLabels[goal]).join("、");
-  container.innerHTML = questions.map((question) => `
-    <article class="question-card ${question.sourceGoal ? "targeted-question" : ""}" data-question="${question.id}">
-      <div class="question-meta">${question.sourceGoal ? `专项追问 · ${goalLabels[question.sourceGoal]}` : "基础生活习惯"}</div>
-      <div class="question-title">${question.text}</div>
-      <div class="option-row frequency">
+  const selectedGoals = getSelectedGoals().map((g) => goalLabels[g]).join("、");
+
+  // Build conditional follow-up info: { triggerId -> [followUpQuestionIds] }
+  const followUpMap = {};
+  conditionalFollowUps.forEach((t) => {
+    followUpMap[t.triggerId] = t.questions;
+  });
+
+  container.innerHTML = questions.map((q) => {
+    const isConditional = q.isConditional || false;
+    const hiddenAttr = isConditional ? "hidden" : "";
+    return `
+    <article class="question-card ${q.sourceGoal ? "targeted-question" : ""} ${isConditional ? "conditional-question" : ""}"
+        data-question="${q.id}" data-conditional-for="${q.conditionalFor || ""}" ${hiddenAttr}>
+      <div class="question-meta">${q.sourceGoal ? `专项追问 · ${goalLabels[q.sourceGoal]}` : (isConditional ? "🔍 智能追问" : "基础生活习惯")}</div>
+      <div class="question-title">${q.text}</div>
+      <div class="option-row">
         ${frequencyOptions.map(([value, label]) => `
           <label class="choice">
-            <input type="radio" name="${question.id}" value="${value}" required>
+            <input type="radio" name="${q.id}" value="${value}" required>
             ${label}
           </label>
         `).join("")}
       </div>
     </article>
-  `).join("") + `
+    `;
+  }).join("") + `
     <article class="question-card question-summary">
       <div class="question-meta">本页问题结构</div>
-      <p>已根据你的目标${selectedGoals ? `「${selectedGoals}」` : ""}追加专项问题。本页共 ${questions.length} 个问题，其中 ${questions.filter((question) => question.sourceGoal).length} 个为目标专项追问。</p>
+      <p>已根据你的目标${selectedGoals ? `「${selectedGoals}」` : ""}追加专项问题。本页共 ${questions.length} 个问题，其中 ${questions.filter((q) => q.sourceGoal).length} 个为目标专项追问，${questions.filter((q) => q.isConditional).length} 个为智能追问（回答特定问题后显示）。</p>
     </article>
   `;
 }
 
 function getSelectedGoals() {
-  return [...form.querySelectorAll('input[name="goals"]:checked')].map((item) => item.value);
+  return [...form.querySelectorAll('input[name="goals"]:checked')].map((el) => el.value);
 }
 
 function getActiveLifestyleQuestions() {
   const selectedGoals = getSelectedGoals();
-  const goalQuestions = selectedGoals.flatMap((goal) => (goalSpecificQuestions[goal] || []).map((question) => ({ ...question, sourceGoal: goal })));
-  const merged = [...lifestyleQuestions, ...goalQuestions];
-  return [...new Map(merged.map((question) => [question.id, question])).values()];
+  const goalQuestions = selectedGoals.flatMap((goal) =>
+    (goalSpecificQuestions[goal] || []).map((q) => ({ ...q, sourceGoal: goal }))
+  );
+  // Include all conditional follow-up questions (initially hidden)
+  const conditionalQuestions = conditionalFollowUps.flatMap((t) =>
+    t.questions.map((q) => ({ ...q, isConditional: true, conditionalFor: t.triggerId }))
+  );
+  const merged = [...lifestyleQuestions, ...goalQuestions, ...conditionalQuestions];
+  return [...new Map(merged.map((q) => [q.id, q])).values()];
 }
 
+// ── Conditional follow-up handling (Feature 5) ─
+function checkConditionalFollowUps() {
+  conditionalFollowUps.forEach((trigger) => {
+    const triggerInput = form.querySelector(`input[name="${trigger.triggerId}"]:checked`);
+    const triggerValue = triggerInput ? Number(triggerInput.value) : -1;
+    trigger.questions.forEach((q) => {
+      const card = document.querySelector(`.conditional-question[data-question="${q.id}"]`);
+      if (!card) return;
+      if (triggerValue >= trigger.threshold) {
+        card.hidden = false;
+        card.style.animation = "softPop 0.35s ease both";
+      } else {
+        card.hidden = true;
+        // Clear answer when hidden
+        const radios = card.querySelectorAll('input[type="radio"]');
+        radios.forEach((r) => { r.checked = false; });
+      }
+    });
+  });
+}
+
+// Attach listener for conditional follow-ups on the lifestyle question container
+document.addEventListener("change", (e) => {
+  if (e.target.closest("#lifestyleQuestions")) {
+    checkConditionalFollowUps();
+  }
+});
+
+// ── Step navigation ────────────────────────────
 function updateStep() {
-  steps.forEach((step, index) => step.classList.toggle("active", index === currentStep));
-  stageItems.forEach((item, index) => {
-    item.classList.toggle("is-done", index < currentStep);
-    item.classList.toggle("is-current", index === currentStep);
+  steps.forEach((step, i) => step.classList.toggle("active", i === currentStep));
+  stageItems.forEach((item, i) => {
+    item.classList.toggle("is-done", i < currentStep);
+    item.classList.toggle("is-current", i === currentStep);
   });
   stepTitle.textContent = stepTitles[currentStep];
   stepHint.textContent = stepHints[currentStep];
-  stepCount.textContent = `${Math.round(((currentStep + 1) / steps.length) * 100)}%`;
-  progressFill.style.width = `${((currentStep + 1) / steps.length) * 100}%`;
+  const progressPercent = Math.round(((currentStep + 1) / steps.length) * 100);
+  stepCount.textContent = `${progressPercent}%`;
+  progressFill.style.width = `${progressPercent}%`;
+  progressTrack.setAttribute("aria-valuenow", progressPercent);
   prevBtn.hidden = currentStep === 0;
   nextBtn.hidden = currentStep === steps.length - 1;
   formMessage.textContent = "";
+  stepTitle.focus({ preventScroll: true });
 }
 
-function scrollToSection(element) {
-  const top = element.getBoundingClientRect().top + window.scrollY - 18;
+function scrollToSection(el) {
+  const top = el.getBoundingClientRect().top + window.scrollY - 24;
   window.scrollTo({ top, behavior: "smooth" });
+}
+
+// ── Validation ─────────────────────────────────
+function validateHeightWeight() {
+  const heightEl = form.querySelector('[name="height"]');
+  const weightEl = form.querySelector('[name="weight"]');
+  const heightHint = document.querySelector("#heightHint");
+  const weightHint = document.querySelector("#weightHint");
+  let ok = true;
+  const h = Number(heightEl.value);
+  const w = Number(weightEl.value);
+
+  if (heightEl.value && (h < 120 || h > 230)) {
+    heightHint.textContent = "请输入合理的身高范围 (120-230 cm)";
+    heightHint.classList.add("warn"); ok = false;
+  } else if (heightEl.value && (h < 140 || h > 210)) {
+    heightHint.textContent = "请确认身高是否正确？";
+    heightHint.classList.add("warn");
+  } else {
+    heightHint.textContent = "";
+    heightHint.classList.remove("warn");
+  }
+
+  if (weightEl.value && (w < 30 || w > 220)) {
+    weightHint.textContent = "请输入合理的体重范围 (30-220 kg)";
+    weightHint.classList.add("warn"); ok = false;
+  } else if (weightEl.value && (w < 35 || w > 180)) {
+    weightHint.textContent = "请确认体重是否正确？";
+    weightHint.classList.add("warn");
+  } else {
+    weightHint.textContent = "";
+    weightHint.classList.remove("warn");
+  }
+  return ok;
 }
 
 function validateCurrentStep() {
   const activeStep = steps[currentStep];
-  const requiredControls = [...activeStep.querySelectorAll("select[required], input[required]")];
-  const names = [...new Set(requiredControls.map((control) => control.name))];
-  const missingName = names.find((name) => {
-    const controls = requiredControls.filter((control) => control.name === name);
-    if (controls[0].type === "radio") {
-      return !controls.some((control) => control.checked);
-    }
-    return !controls[0].value;
+  const requiredControls = [...activeStep.querySelectorAll('select[required], input[required]:not([type=radio]):not([type=checkbox])')];
+  // For radio groups, only check visible (non-hidden) ones
+  const visibleRadios = [...activeStep.querySelectorAll('.question-card:not([hidden]) input[type=radio][required]')];
+  const radioNames = [...new Set(visibleRadios.map((c) => c.name))];
+  const missingRadioName = radioNames.find((name) => {
+    const controls = activeStep.querySelectorAll(`input[name="${name}"]`);
+    return ![...controls].some((c) => c.checked);
+  });
+  const names = [...new Set(requiredControls.map((c) => c.name))];
+  const missingSelect = names.find((name) => {
+    const el = activeStep.querySelector(`[name="${name}"]`);
+    return el && !el.value;
   });
 
-  activeStep.querySelectorAll(".field, .question-card").forEach((item) => item.classList.remove("is-missing"));
-  const goalControls = [...activeStep.querySelectorAll('input[name="goals"]')];
-  const missingGoals = goalControls.length > 0 && !goalControls.some((control) => control.checked);
-  if (!missingName && !missingGoals) return true;
+  activeStep.querySelectorAll(".field, .question-card").forEach((el) => el.classList.remove("is-missing"));
 
-  const missing = missingGoals ? goalControls[0] : activeStep.querySelector(`[name="${missingName}"]`);
+  const goalControls = [...activeStep.querySelectorAll('input[name="goals"]')];
+  const missingGoals = goalControls.length > 0 && !goalControls.some((c) => c.checked);
+
+  if (currentStep === 0) validateHeightWeight();
+
+  if (!missingSelect && !missingRadioName && !missingGoals) return true;
+
+  const missing = missingGoals ? goalControls[0]
+    : (missingRadioName ? activeStep.querySelector(`input[name="${missingRadioName}"]`)
+    : activeStep.querySelector(`[name="${missingSelect}"]`));
   const wrapper = missing.closest(".field, .question-card");
   wrapper.classList.add("is-missing");
   wrapper.scrollIntoView({ behavior: "smooth", block: "center" });
@@ -358,6 +605,7 @@ function validateCurrentStep() {
   return false;
 }
 
+// ── Data collection ────────────────────────────
 function getFormData() {
   const data = new FormData(form);
   const profile = {
@@ -372,14 +620,15 @@ function getFormData() {
     specialStatus: data.get("specialStatus"),
     checkup: data.get("checkup")
   };
-  const healthRisks = Object.fromEntries(healthRiskQuestions.map((question) => [question.id, data.get(question.id)]));
-  const lifestyle = Object.fromEntries(lifestyleQuestions.map((question) => [question.id, Number(data.get(question.id) || 0)]));
-  getActiveLifestyleQuestions().forEach((question) => {
-    lifestyle[question.id] = Number(data.get(question.id) || 0);
+  const healthRisks = Object.fromEntries(healthRiskQuestions.map((q) => [q.id, data.get(q.id)]));
+  const lifestyle = {};
+  getActiveLifestyleQuestions().forEach((q) => {
+    lifestyle[q.id] = Number(data.get(q.id) || 0);
   });
   return { profile, healthRisks, lifestyle };
 }
 
+// ── Scoring ────────────────────────────────────
 function calculateBmi(profile) {
   if (!profile.height || !profile.weight) return null;
   const meters = profile.height / 100;
@@ -390,52 +639,28 @@ function calculateScores(answers) {
   const scores = Object.fromEntries(Object.keys(dimensionMeta).map((key) => [key, 0]));
   const bmi = calculateBmi(answers.profile);
 
-  getActiveLifestyleQuestions().forEach((question) => {
-    const value = answers.lifestyle[question.id] || 0;
-    question.dimensions.forEach((dimension) => {
-      scores[dimension] += value;
-    });
+  getActiveLifestyleQuestions().forEach((q) => {
+    const value = answers.lifestyle[q.id] || 0;
+    q.dimensions.forEach((dim) => { scores[dim] += value; });
   });
 
   if (answers.profile.sleepHours === "under5") scores.sleep += 4;
   if (answers.profile.sleepHours === "5-6") scores.sleep += 2;
-  if (answers.profile.exerciseFreq === "none") {
-    scores.heart += 3;
-    scores.fitness += 2;
-  }
+  if (answers.profile.exerciseFreq === "none") { scores.heart += 3; scores.fitness += 2; }
   if (answers.profile.exerciseFreq === "1-2") scores.fitness += 1;
-  if (answers.profile.dietType === "vegetarian") {
-    scores.mineral += 2;
-    scores.heart += 1;
-  }
-  if (answers.profile.dietType === "vegan") {
-    scores.mineral += 3;
-    scores.bone += 2;
-    scores.heart += 1;
-  }
-  const goalDimensionMap = { immunity: "immune" };
+  if (answers.profile.dietType === "vegetarian") { scores.mineral += 2; scores.heart += 1; }
+  if (answers.profile.dietType === "vegan") { scores.mineral += 3; scores.bone += 2; scores.heart += 1; }
+
   answers.profile.goals.forEach((goal) => {
-    const goalDimension = goalDimensionMap[goal] || goal;
-    if (goalDimension && scores[goalDimension] !== undefined) scores[goalDimension] += 2;
-    if (goal === "energy") scores.sleep += 2;
-    if (goal === "general") {
-      scores.antioxidant += 1;
-      scores.fiber += 1;
-    }
+    const boost = goalDimensionBoost[goal];
+    if (!boost) return;
+    boost.dimensions.forEach((dim) => { if (scores[dim] !== undefined) scores[dim] += 2; });
+    boost.secondary.forEach((dim) => { if (scores[dim] !== undefined) scores[dim] += 1; });
   });
-  if (bmi && bmi >= 24) {
-    scores.fitness += 2;
-    scores.heart += 2;
-    scores.sugar += 1;
-  }
-  if (bmi && bmi < 18.5) {
-    scores.fitness += 2;
-    scores.mineral += 1;
-  }
-  if (answers.profile.checkup === "long" || answers.profile.checkup === "never") {
-    scores.bone += 1;
-    scores.mineral += 1;
-  }
+
+  if (bmi && bmi >= 24) { scores.fitness += 2; scores.heart += 2; scores.sugar += 1; }
+  if (bmi && bmi < 18.5) { scores.fitness += 2; scores.mineral += 1; }
+  if (answers.profile.checkup === "long" || answers.profile.checkup === "never") { scores.bone += 1; scores.mineral += 1; }
 
   return scores;
 }
@@ -446,27 +671,133 @@ function getLevel(score) {
   return { label: "低关注", className: "low" };
 }
 
+// ── Explanation trace (Feature 4) ──────────────
+function buildExplanations(dimensionKey, answers) {
+  const allQuestions = getActiveLifestyleQuestions();
+  const contributors = allQuestions
+    .filter((q) => q.dimensions.includes(dimensionKey) && answers.lifestyle[q.id] >= 3)
+    .map((q) => ({ text: questionTextMap[q.id] || q.text, score: answers.lifestyle[q.id] }))
+    .sort((a, b) => b.score - a.score)
+    .slice(0, 3);
+
+  // Also check profile factors
+  const profileReasons = [];
+  if (dimensionKey === "sleep" && answers.profile.sleepHours === "under5") profileReasons.push("自报睡眠少于 5 小时");
+  if (dimensionKey === "sleep" && answers.profile.sleepHours === "5-6") profileReasons.push("自报睡眠 5-6 小时");
+  if (dimensionKey === "fitness" && answers.profile.exerciseFreq === "none") profileReasons.push("自报几乎不运动");
+  if (dimensionKey === "heart" && answers.profile.exerciseFreq === "none") profileReasons.push("缺乏运动影响心血管评估");
+  if ((dimensionKey === "mineral" || dimensionKey === "bone") && answers.profile.dietType === "vegan") profileReasons.push("纯素饮食需关注该维度");
+  if ((dimensionKey === "mineral") && answers.profile.dietType === "vegetarian") profileReasons.push("素食饮食需关注该维度");
+
+  return { contributors, profileReasons };
+}
+
+// ── BMI gauge (Feature 6) ─────────────────────
+function renderBmiGauge(bmi) {
+  if (!bmi) return '<div class="bmi-gauge-placeholder">输入身高体重后查看 BMI 定位</div>';
+  // Calculate marker position: scale 14-34 onto 0-100%
+  const clamped = Math.max(14, Math.min(34, bmi));
+  const pct = ((clamped - 14) / 20) * 100;
+  const label = getBmiLabel(bmi);
+  const zoneColors = ["#5d8fd6", "#5d8fd6", "#2ea87a", "#ffe600", "#ffe600", "#f08a5d", "#e04e3d"];
+  return `
+    <div class="bmi-gauge" aria-label="BMI 范围指示器，当前值 ${bmi}，处于${label}范围">
+      <div class="bmi-gauge-bar">
+        <div class="bmi-gauge-gradient"></div>
+        <div class="bmi-gauge-marker" style="left: ${pct}%" aria-hidden="true"></div>
+      </div>
+      <div class="bmi-gauge-labels">
+        <span>偏瘦</span><span>正常</span><span>偏高</span><span>较高</span>
+      </div>
+      <div class="bmi-gauge-value">BMI <strong>${bmi}</strong> · ${label}</div>
+    </div>
+  `;
+}
+
+// ── Supplement interaction rendering (Feature 2) ─
+function renderSupplementInteraction() {
+  return `
+    <div class="supplement-interaction" id="supplementInteraction">
+      <h4>我正在服用的补剂（选填，检测相互作用）</h4>
+      <div class="supplement-options">
+        ${supplementOptions.map((opt) => `
+          <label class="choice chip-choice supplement-chip">
+            <input type="checkbox" name="mySupplements" value="${opt.id}">
+            ${opt.label}
+          </label>
+        `).join("")}
+      </div>
+      <div class="interaction-results" id="interactionResults" hidden></div>
+    </div>
+  `;
+}
+
+function updateSupplementInteractions() {
+  const selected = [...document.querySelectorAll('input[name="mySupplements"]:checked')].map((el) => el.value);
+  const container = document.querySelector("#interactionResults");
+  if (selected.length < 2) {
+    container.hidden = true;
+    return;
+  }
+  const interactions = findInteractions(selected);
+  if (interactions.length === 0) {
+    container.innerHTML = '<p class="interaction-positive">当前选择的补剂之间未发现已知冲突。</p>';
+    container.hidden = false;
+    return;
+  }
+  container.hidden = false;
+  container.innerHTML = interactions.map((inter) => {
+    const cls = inter.severity === "high" ? "interaction-warn"
+      : inter.severity === "medium" ? "interaction-caution"
+      : inter.severity === "positive" ? "interaction-positive"
+      : "interaction-none";
+    const icon = inter.severity === "high" ? "⚠" : inter.severity === "medium" ? "⚡" : inter.severity === "positive" ? "✓" : "·";
+    return `<div class="interaction-item ${cls}"><span class="interaction-icon">${icon}</span>${inter.text}</div>`;
+  }).join("");
+}
+
+document.addEventListener("change", (e) => {
+  if (e.target.name === "mySupplements") updateSupplementInteractions();
+});
+
+// ── Safety ─────────────────────────────────────
+function isHighRisk(answers) {
+  const riskValues = Object.values(answers.healthRisks);
+  const criticalStatuses = ["pregnant", "preparing", "breastfeeding"];
+  if (answers.profile.ageGroup === "under18") return true;
+  if (answers.profile.ageGroup === "60plus") return true;
+  if (criticalStatuses.includes(answers.profile.specialStatus)) return true;
+  if (riskValues.includes("yes") || riskValues.includes("unsure")) return true;
+  return false;
+}
+
 function getSafetyWarnings(answers) {
   const warnings = [];
   const riskValues = Object.values(answers.healthRisks);
-
-  if (answers.profile.ageGroup === "under18") warnings.push("未成年人使用补剂应由监护人和医生共同确认。");
+  if (answers.profile.ageGroup === "under18") warnings.push("未成年人使用补剂应由监护人和医生共同确认，本报告仅提供饮食方向参考。");
   if (answers.profile.ageGroup === "60plus") warnings.push("60 岁以上用户更需要关注药物相互作用和基础疾病风险。");
   if (["pregnant", "preparing", "breastfeeding"].includes(answers.profile.specialStatus)) warnings.push("怀孕、备孕或哺乳阶段不建议自行选择高剂量补剂。");
   if (riskValues.includes("yes") || riskValues.includes("unsure")) warnings.push("你的回答中存在疾病、用药、不确定健康状态或过敏风险，建议先咨询医生或注册营养师。");
   if (answers.healthRisks.kidneyDisease === "yes" || answers.healthRisks.kidneyDisease === "unsure") warnings.push("肾病、肾结石或肾功能异常用户不应自行补充高钾、高镁或高蛋白类产品。");
   if (answers.healthRisks.liverDisease === "yes" || answers.healthRisks.liverDisease === "unsure") warnings.push("肝功能异常用户应避免自行叠加草本或高剂量脂溶性维生素。");
   if (answers.healthRisks.allergy === "yes" || answers.healthRisks.allergy === "unsure") warnings.push("存在食物过敏风险时，鱼油、坚果来源、乳制品或大豆来源补剂需谨慎确认成分。");
-
   return warnings;
 }
 
-function buildRecommendations(scores) {
-  return Object.entries(scores)
+// ── Recommendations ────────────────────────────
+function buildRecommendations(scores, highRisk) {
+  const entries = Object.entries(scores)
     .map(([key, score]) => ({ key, score, level: getLevel(score), ...dimensionMeta[key] }))
     .filter((item) => item.score >= 4)
     .sort((a, b) => b.score - a.score)
     .slice(0, 8);
+  if (highRisk && entries.length > 0) {
+    entries.forEach((item) => {
+      item.note = "⚠ 你有需谨慎的健康因素，以下仅供参考，请务必优先咨询医生或注册营养师。 " + item.note;
+      item.highRisk = true;
+    });
+  }
+  return entries;
 }
 
 function getReportScores(scores) {
@@ -477,7 +808,6 @@ function getReportScores(scores) {
     { label: "心理", keys: ["stress"] },
     { label: "体质", keys: ["bone", "immune", "skin", "liver", "eye"] }
   ];
-
   const items = groups.map((group) => {
     const raw = group.keys.reduce((total, key) => total + (scores[key] || 0), 0);
     const value = Math.max(35, Math.min(96, 100 - raw * 5));
@@ -488,47 +818,94 @@ function getReportScores(scores) {
 }
 
 function renderRadar(reportScores) {
-  const cx = 125;
-  const cy = 118;
-  const maxRadius = 86;
+  const cx = 125, cy = 118, maxRadius = 86;
   const sides = reportScores.items.length;
-
   const point = (index, radius) => {
     const angle = -Math.PI / 2 + (Math.PI * 2 * index) / sides;
     return `${cx + Math.cos(angle) * radius},${cy + Math.sin(angle) * radius}`;
   };
+  const rings = [0.33, 0.66, 1].map((scale) =>
+    `<polygon points="${reportScores.items.map((_, i) => point(i, maxRadius * scale)).join(" ")}" />`
+  ).join("");
+  const area = reportScores.items.map((_, i) => point(i, maxRadius * (reportScores.items[i].value / 100))).join(" ");
+  const axes = reportScores.items.map((item, i) => {
+    const [px, py] = point(i, maxRadius).split(",");
+    const [tx, ty] = point(i, maxRadius + 24).split(",");
+    return `<line x1="${cx}" y1="${cy}" x2="${px}" y2="${py}" /><text x="${tx}" y="${ty}">${item.label} ${item.value}</text>`;
+  }).join("");
+  return `<svg class="radar-chart" viewBox="0 0 250 245" role="img" aria-label="健康测评雷达图，综合评分 ${reportScores.total}">
+    <g class="radar-grid">${rings}${axes}</g>
+    <polygon class="radar-area" points="${area}" />
+    <text class="radar-total" x="${cx}" y="${cy + 10}">${reportScores.total}</text></svg>`;
+}
 
-  const rings = [0.33, 0.66, 1].map((scale) => (
-    `<polygon points="${reportScores.items.map((_, index) => point(index, maxRadius * scale)).join(" ")}" />`
-  )).join("");
+// ── Tiered actions (Feature 3) ──────────────────
+function buildTieredActions(answers, recommendations, warnings, highRisk) {
+  const critical = [];
+  const tryActions = [];
+  const maintain = [];
 
-  const area = reportScores.items.map((item, index) => point(index, maxRadius * (item.value / 100))).join(" ");
-  const axes = reportScores.items.map((item, index) => `
-    <line x1="${cx}" y1="${cy}" x2="${point(index, maxRadius).split(",")[0]}" y2="${point(index, maxRadius).split(",")[1]}" />
-    <text x="${point(index, maxRadius + 24).split(",")[0]}" y="${point(index, maxRadius + 24).split(",")[1]}">${item.label} ${item.value}</text>
-  `).join("");
+  if (highRisk) {
+    critical.push({ text: "咨询医生或注册营养师，确认补剂安全性。", tier: "critical" });
+  }
+  if (warnings.length && !highRisk) {
+    critical.push({ text: "先把安全提醒作为第一优先级，慢性疾病、用药、孕期或过敏风险需专业确认。", tier: "critical" });
+  }
+  if (recommendations.some((item) => item.key === "sleep")) {
+    critical.push({ text: "连续 7 天固定起床时间，下午后减少咖啡因，睡前 30 分钟减少屏幕刺激。", tier: "critical" });
+  }
+  if (recommendations.some((item) => item.key === "sugar")) {
+    tryActions.push({ text: "把含糖饮料替换为无糖饮品，主食搭配蛋白质和蔬菜。", tier: "try" });
+  }
+  if (recommendations.some((item) => item.key === "eye")) {
+    tryActions.push({ text: "每用眼 30-40 分钟休息 3-5 分钟，增加深绿叶菜、鸡蛋黄或鱼类摄入。", tier: "try" });
+  }
+  if (recommendations.some((item) => item.key === "fiber" || item.key === "digestive")) {
+    tryActions.push({ text: "每周逐步增加全谷物、豆类和蔬菜，同时提高饮水量。", tier: "try" });
+  }
+  if (recommendations.some((item) => item.key === "stress")) {
+    tryActions.push({ text: "每天安排 10 分钟低强度散步或拉伸，降低恢复负担。", tier: "try" });
+  }
+  if (answers.profile.checkup === "long" || answers.profile.checkup === "never") {
+    maintain.push({ text: "条件允许时，体检关注血糖、血脂、肝肾功能、维生素 D、铁蛋白或 B12。", tier: "maintain" });
+  }
+  if (!highRisk) {
+    maintain.push({ text: "不要同时叠加多个高剂量复合补剂，注意维生素 A、D、E、K 的长期超量风险。", tier: "maintain" });
+  }
+  maintain.push({ text: "坚持均衡饮食、规律作息和适量运动，这是营养健康的基础。", tier: "maintain" });
 
+  return { critical: critical.slice(0, 2), tryActions: tryActions.slice(0, 3), maintain: maintain.slice(0, 3) };
+}
+
+function renderTieredActions(tiered) {
+  const renderItems = (items) => items.map((a) => `<li>${a.text}</li>`).join("");
+  let html = "";
+  if (tiered.critical.length) {
+    html += `<div class="tier-card critical-tier"><h4>本周最重要</h4><ul>${renderItems(tiered.critical)}</ul></div>`;
+  }
+  if (tiered.tryActions.length) {
+    html += `<div class="tier-card try-tier"><h4>本周可尝试</h4><ul>${renderItems(tiered.tryActions)}</ul></div>`;
+  }
+  if (tiered.maintain.length) {
+    html += `<div class="tier-card maintain-tier"><h4>持续关注</h4><ul>${renderItems(tiered.maintain)}</ul></div>`;
+  }
+  return html;
+}
+
+// ── Meal plan rendering (Feature 7) ────────────
+function renderMealPlan(item) {
+  if (!item.mealPlan || item.highRisk) return "";
   return `
-    <svg class="radar-chart" viewBox="0 0 250 245" role="img" aria-label="健康测评雷达图">
-      <g class="radar-grid">${rings}${axes}</g>
-      <polygon class="radar-area" points="${area}" />
-      <text class="radar-total" x="${cx}" y="${cy + 10}">${reportScores.total}</text>
-    </svg>
+    <div class="mini-title">一日三餐示例</div>
+    <div class="meal-plan">
+      <div class="meal-slot"><span class="meal-label">早</span>${item.mealPlan.breakfast}</div>
+      <div class="meal-slot"><span class="meal-label">午</span>${item.mealPlan.lunch}</div>
+      <div class="meal-slot"><span class="meal-label">晚</span>${item.mealPlan.dinner}</div>
+    </div>
   `;
 }
 
-function buildActionList(answers, recommendations, warnings) {
-  const actions = [];
-  if (warnings.length) actions.push("先把报告中的安全提醒作为第一优先级，有慢性疾病、用药、孕期或过敏风险时，补剂选择需要专业人士确认。");
-  if (recommendations.some((item) => item.key === "sleep")) actions.push("连续 7 天固定起床时间，下午后减少咖啡因，睡前 30 分钟减少屏幕刺激。");
-  if (recommendations.some((item) => item.key === "eye")) actions.push("每用眼 30-40 分钟休息 3-5 分钟，并增加深绿叶菜、鸡蛋黄或鱼类摄入。");
-  if (recommendations.some((item) => item.key === "sugar")) actions.push("把含糖饮料替换为无糖饮品，主食搭配蛋白质和蔬菜，减少能量波动。");
-  if (recommendations.some((item) => item.key === "fiber" || item.key === "digestive")) actions.push("每周逐步增加全谷物、豆类和蔬菜，同时提高饮水量。");
-  if (answers.profile.checkup === "long" || answers.profile.checkup === "never") actions.push("如果条件允许，可在下次体检关注血糖、血脂、肝肾功能、维生素 D、铁蛋白或 B12。");
-  actions.push("不要同时叠加多个高剂量复合补剂，尤其注意维生素 A、D、E、K 的长期超量风险。");
-  return actions.slice(0, 6);
-}
-
+// ── Score list rendering ───────────────────────
 function renderScoreList(scores) {
   return Object.entries(scores)
     .map(([key, score]) => ({ key, score, title: dimensionMeta[key].title }))
@@ -536,13 +913,7 @@ function renderScoreList(scores) {
     .slice(0, 6)
     .map((item) => {
       const width = Math.min(100, Math.round((item.score / 12) * 100));
-      return `
-        <div class="score-row">
-          <span>${item.title}</span>
-          <strong>${item.score}</strong>
-          <div class="score-bar"><i style="width: ${width}%"></i></div>
-        </div>
-      `;
+      return `<div class="score-row"><span>${item.title}</span><strong>${item.score}</strong><div class="score-bar"><i style="width: ${width}%"></i></div></div>`;
     }).join("");
 }
 
@@ -565,37 +936,18 @@ function getVisualTile(key, usedTiles) {
     liver: ["tile2-breakfast", "tile-breakfast", "tile2-water"]
   };
   const orderedTiles = [
-    "tile-run",
-    "tile-soccer",
-    "tile-sun",
-    "tile-sunscreen",
-    "tile-sleep",
-    "tile-eye",
-    "tile-meal",
-    "tile-water",
-    "tile-calm",
-    "tile-breakfast",
-    "tile-hike",
-    "tile-skincare",
-    "tile2-stretch",
-    "tile2-cycle",
-    "tile2-basketball",
-    "tile2-meal",
-    "tile2-eye",
-    "tile2-sleep",
-    "tile2-calm",
-    "tile2-water",
-    "tile2-sunscreen",
-    "tile2-hike",
-    "tile2-soccer",
-    "tile2-breakfast"
+    "tile-run", "tile-soccer", "tile-sun", "tile-sunscreen", "tile-sleep",
+    "tile-eye", "tile-meal", "tile-water", "tile-calm", "tile-breakfast",
+    "tile-hike", "tile-skincare", "tile2-stretch", "tile2-cycle",
+    "tile2-basketball", "tile2-meal", "tile2-eye", "tile2-sleep",
+    "tile2-calm", "tile2-water", "tile2-sunscreen", "tile2-hike",
+    "tile2-soccer", "tile2-breakfast"
   ];
-  const preferredTiles = tileMap[key] || ["tile-breakfast"];
-
-  if (!usedTiles) return preferredTiles[0];
-  const selected = preferredTiles.find((tile) => !usedTiles.has(tile))
-    || orderedTiles.find((tile) => !usedTiles.has(tile))
-    || preferredTiles[0];
+  const preferred = tileMap[key] || ["tile-breakfast"];
+  if (!usedTiles) return preferred[0];
+  const selected = preferred.find((t) => !usedTiles.has(t))
+    || orderedTiles.find((t) => !usedTiles.has(t))
+    || preferred[0];
   usedTiles.add(selected);
   return selected;
 }
@@ -608,41 +960,34 @@ function getBmiLabel(bmi) {
   return "较高";
 }
 
-function buildSupplementPush(recommendations) {
+function buildSupplementPush(recommendations, highRisk) {
+  if (highRisk) return ["请先咨询医生", "均衡饮食优先", "遵医嘱补充"];
   const seen = new Set();
   const nutrients = [];
   recommendations.forEach((item) => {
-    item.nutrients.forEach((nutrient) => {
-      if (!seen.has(nutrient)) {
-        seen.add(nutrient);
-        nutrients.push(nutrient);
-      }
-    });
+    item.nutrients.forEach((n) => { if (!seen.has(n)) { seen.add(n); nutrients.push(n); } });
   });
   return nutrients.slice(0, 6);
 }
 
-function buildSummaryAdvice(answers, recommendations, bmi) {
+function buildSummaryAdvice(answers, recommendations, bmi, highRisk) {
   const advice = [];
+  if (highRisk) {
+    advice.push("你的健康问卷中有需要专业判断的情况，本报告仅作为饮食和生活方式参考，补剂选择必须咨询医生或注册营养师。");
+    return advice;
+  }
   const goals = answers.profile.goals;
   if (goals.includes("fitness") || (bmi && bmi >= 24)) {
     advice.push("你的身高体重与运动目标提示：运动恢复、蛋白质摄入和控糖饮食需要一起看，建议先稳定每餐蛋白质来源。");
   }
-  if (goals.includes("skin")) {
-    advice.push("你选择了皮肤状态目标，报告会重点关注睡眠、糖摄入、蔬果抗氧化和补水情况。");
-  }
-  if (goals.includes("eye")) {
-    advice.push("你选择了护眼目标，报告会额外结合屏幕时长、夜间用眼、优质脂肪和叶黄素来源。");
-  }
-  if (goals.includes("energy")) {
-    advice.push("你选择了精力目标，报告会重点检查早餐、咖啡因、睡眠节律和餐后困倦。");
-  }
-  if (recommendations[0]) {
-    advice.push(`当前最需要优先处理的是「${recommendations[0].title}」，建议先从生活习惯和饮食结构补齐，再考虑补剂。`);
-  }
+  if (goals.includes("skin")) advice.push("你选择了皮肤状态目标，报告会重点关注睡眠、糖摄入、蔬果抗氧化和补水情况。");
+  if (goals.includes("eye")) advice.push("你选择了护眼目标，报告会额外结合屏幕时长、夜间用眼、优质脂肪和叶黄素来源。");
+  if (goals.includes("energy")) advice.push("你选择了精力目标，报告会重点检查早餐、咖啡因、睡眠节律和餐后困倦。");
+  if (recommendations[0]) advice.push(`当前最需要优先处理的是「${recommendations[0].title}」，建议先从生活习惯和饮食结构补齐，再考虑补剂。`);
   return advice.slice(0, 4);
 }
 
+// ── Main result rendering ──────────────────────
 function renderResults() {
   if (!validateCurrentStep()) return;
 
@@ -650,7 +995,8 @@ function renderResults() {
   const scores = calculateScores(answers);
   const reportScores = getReportScores(scores);
   const warnings = getSafetyWarnings(answers);
-  const recommendations = buildRecommendations(scores);
+  const highRisk = isHighRisk(answers);
+  const recommendations = buildRecommendations(scores, highRisk);
   const bmi = calculateBmi(answers.profile);
 
   const summaryTags = document.querySelector("#summaryTags");
@@ -662,37 +1008,49 @@ function renderResults() {
   const analysisCard = document.querySelector("#analysisCard");
   const recommendationGrid = document.querySelector("#recommendationGrid");
   const actionList = document.querySelector("#actionList");
+  const supplementInteractionArea = document.querySelector("#supplementInteractionArea");
 
+  // Summary tags
   const tags = recommendations.length
     ? recommendations.slice(0, 5).map((item) => item.title)
     : ["当前整体关注度较低", "保持均衡饮食", "定期复查习惯"];
+  summaryTags.innerHTML = tags.map((t) => `<span class="tag">${t}</span>`).join("");
 
-  summaryTags.innerHTML = tags.map((tag) => `<span class="tag">${tag}</span>`).join("");
+  // BMI with gauge (Feature 6)
   bmiCard.innerHTML = `
     <span>BMI 参考</span>
-    <strong>${bmi || "--"}</strong>
+    ${renderBmiGauge(bmi)}
     <p>${bmi ? `当前处于${getBmiLabel(bmi)}范围，会影响运动恢复、控糖和心血管饮食判断。` : "身高体重信息不足，暂不计算 BMI。"}</p>
   `;
-  const pushed = buildSupplementPush(recommendations);
+
+  // Supplement push
+  const pushed = buildSupplementPush(recommendations, highRisk);
   supplementPush.innerHTML = `
     <h4>营养品推送建议</h4>
-    <p>以下是可优先了解的营养方向，不代表必须购买或服用。</p>
-    <div class="push-list">
-      ${(pushed.length ? pushed : ["均衡饮食", "规律体检", "睡眠管理"]).map((item) => `<span>${item}</span>`).join("")}
-    </div>
+    <p>${highRisk ? "你的情况需要专业判断，以下是安全方向，不代表必须购买或服用。" : "以下是可优先了解的营养方向，不代表必须购买或服用。"}</p>
+    <div class="push-list">${pushed.map((item) => `<span>${item}</span>`).join("")}</div>
   `;
+
+  // Supplement interaction (Feature 2)
+  supplementInteractionArea.innerHTML = renderSupplementInteraction();
+
+  // Summary advice
   summaryAdvice.innerHTML = `
     <h4>结合你的信息</h4>
-    <ul>${buildSummaryAdvice(answers, recommendations, bmi).map((item) => `<li>${item}</li>`).join("")}</ul>
+    <ul>${buildSummaryAdvice(answers, recommendations, bmi, highRisk).map((item) => `<li>${item}</li>`).join("")}</ul>
   `;
+
+  // Score list
   scoreList.innerHTML = renderScoreList(scores);
 
+  // Safety card
   safetyCard.classList.toggle("high-risk", warnings.length > 0);
   safetyCard.innerHTML = `
     <h3>${warnings.length ? "安全提醒优先看" : "通用安全提醒"}</h3>
     <p>${warnings.length ? warnings.join(" ") : "当前未发现明显补剂安全拦截条件，但补剂仍不能替代均衡饮食、睡眠、运动和正规医疗建议。"}</p>
   `;
 
+  // Analysis card
   const top = recommendations[0];
   analysisCard.innerHTML = `
     <div class="report-score">
@@ -700,66 +1058,89 @@ function renderResults() {
         <p class="eyebrow">Health Score</p>
         <h3>你的健康测评综合得分：<strong>${reportScores.total}</strong><span>/100</span></h3>
         <p>${top ? `你目前最突出的关注点是「${top.title}」。这通常不是单一营养素能解决的问题，更适合从饮食结构、作息节奏和体检指标三方面一起确认。` : "你的回答没有触发明显高关注维度，建议继续保持稳定作息、均衡饮食和规律运动。"}</p>
+        ${highRisk ? '<p class="high-risk-banner">⚠ 你属于高风险用户，以上评分仅供参考，补剂使用必须先咨询医生。</p>' : ""}
       </div>
       ${renderRadar(reportScores)}
     </div>
   `;
 
+  // Recommendation grid with explanations (Feature 4) + meal plans (Feature 7)
   const usedVisualTiles = new Set();
   recommendationGrid.innerHTML = recommendations.length
-    ? recommendations.map((item) => `
-      <article class="recommend-card plan-card">
-        <div class="plan-visual ${getVisualTile(item.key, usedVisualTiles)}" aria-label="${item.title}营养方向插画">
+    ? recommendations.map((item) => {
+      const explanation = buildExplanations(item.key, answers);
+      const explanationHtml = (explanation.contributors.length > 0 || explanation.profileReasons.length > 0) ? `
+        <div class="explanation-box">
+          <div class="mini-title">为什么关注这一项</div>
+          ${explanation.contributors.map((c) => `<p class="explain-line">因为你回答「${c.text}」为较高频率</p>`).join("")}
+          ${explanation.profileReasons.map((r) => `<p class="explain-line">· ${r}</p>`).join("")}
         </div>
+      ` : "";
+
+      return `
+      <article class="plan-card">
+        <div class="plan-visual ${getVisualTile(item.key, usedVisualTiles)}" aria-hidden="true"></div>
         <div class="plan-content">
-        <span class="level ${item.level.className}">${item.level.label} · ${item.score} 分</span>
-        <h3>${item.title}</h3>
-        <p>${item.note}</p>
-        <div class="insight-grid">
-          <div>
-            <strong>为什么关注</strong>
-            <p>${item.reason}</p>
+          <span class="level ${item.level.className}">${item.level.label} · ${item.score} 分</span>
+          <h3>${item.title}</h3>
+          <p>${item.note}</p>
+          <div class="insight-grid">
+            <div><strong>为什么关注</strong><p>${item.reason}</p></div>
+            <div><strong>执行建议</strong><p>${item.action}</p></div>
           </div>
-          <div>
-            <strong>执行建议</strong>
-            <p>${item.action}</p>
-          </div>
+          ${explanationHtml}
+          ${item.highRisk ? "" : `
+            <div class="mini-title">可关注营养素</div>
+            <div class="nutrients">${item.nutrients.map((n) => `<span class="nutrient">${n}</span>`).join("")}</div>
+            <div class="mini-title">优先食物</div>
+            <p class="food-line">${item.foods.join("、")}</p>
+            ${renderMealPlan(item)}
+          `}
         </div>
-        <div class="mini-title">可关注营养素</div>
-        <div class="nutrients">
-          ${item.nutrients.map((nutrient) => `<span class="nutrient">${nutrient}</span>`).join("")}
-        </div>
-        <div class="mini-title">优先食物</div>
-        <p class="food-line">${item.foods.join("、")}</p>
-        </div>
-      </article>
-    `).join("")
-    : `
-      <article class="recommend-card">
-        <span class="level">低关注</span>
-        <h3>维持当前习惯</h3>
+      </article>`;
+    }).join("")
+    : `<article class="recommend-card">
+        <span class="level">低关注</span><h3>维持当前习惯</h3>
         <p>你的问卷未触发明显营养关注项。建议继续保持均衡饮食、规律作息和适量运动。</p>
-        <div class="nutrients">
-          <span class="nutrient">均衡饮食</span>
-          <span class="nutrient">规律体检</span>
-        </div>
-      </article>
-    `;
+        <div class="nutrients"><span class="nutrient">均衡饮食</span><span class="nutrient">规律体检</span></div>
+      </article>`;
 
-  actionList.innerHTML = buildActionList(answers, recommendations, warnings)
-    .map((item) => `<li>${item}</li>`)
-    .join("");
+  // Tiered action plan (Feature 3)
+  const tiered = buildTieredActions(answers, recommendations, warnings, highRisk);
+  actionList.innerHTML = renderTieredActions(tiered);
 
+  // Switch view
   assessment.hidden = true;
   results.hidden = false;
   summaryPage.hidden = false;
   detailReport.hidden = true;
   results.scrollIntoView({ behavior: "smooth", block: "start" });
+  clearFormData();
+  // Re-check supplement interactions (in case user re-renders)
+  updateSupplementInteractions();
 }
 
+// ── Edit / Export / Restart ────────────────────
+function editAnswers() {
+  results.hidden = true;
+  assessment.hidden = false;
+  currentStep = 0;
+  updateStep();
+  assessment.scrollIntoView({ behavior: "smooth", block: "start" });
+}
+
+function exportReport() {
+  showToast("正在生成打印版报告…");
+  setTimeout(() => window.print(), 300);
+}
+
+// ── Event listeners ────────────────────────────
 document.querySelector("#startBtn").addEventListener("click", () => {
   hero.hidden = true;
   assessment.hidden = false;
+  restoreFormData();
+  renderLifestyleQuestions();
+  checkConditionalFollowUps();
   assessment.scrollIntoView({ behavior: "smooth", block: "start" });
 });
 
@@ -772,7 +1153,7 @@ prevBtn.addEventListener("click", () => {
 nextBtn.addEventListener("click", () => {
   if (!validateCurrentStep()) return;
   currentStep = Math.min(steps.length - 1, currentStep + 1);
-  if (currentStep === 2) renderLifestyleQuestions();
+  if (currentStep === 2) { renderLifestyleQuestions(); checkConditionalFollowUps(); }
   updateStep();
   scrollToSection(assessment);
 });
@@ -793,10 +1174,15 @@ document.querySelector("#restartBtn").addEventListener("click", () => {
   summaryPage.hidden = false;
   detailReport.hidden = true;
   form.reset();
+  clearFormData();
   updateStep();
   window.scrollTo({ top: 0, behavior: "smooth" });
 });
 
+document.querySelector("#editAnswersBtn").addEventListener("click", editAnswers);
+document.querySelector("#exportBtn").addEventListener("click", exportReport);
+
+// ── Initial render ─────────────────────────────
 renderHealthRiskQuestions();
 renderLifestyleQuestions();
 updateStep();

@@ -1,0 +1,8 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(node -e ' *)",
+      "Bash(node -e \"new Function\\(require\\('fs'\\).readFileSync\\('script.js', 'utf8'\\)\\); console.log\\('JS Syntax: OK'\\)\")"
+    ]
+  }
+}

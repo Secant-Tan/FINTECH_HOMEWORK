@@ -7,18 +7,21 @@
   <link rel="stylesheet" href="style.css">
 </head>
 <body>
+  <a href="#assessment" class="skip-link">跳到主要内容</a>
+
   <main class="app-shell">
-    <section class="hero" id="hero">
+    <!-- ===== Hero ===== -->
+    <section class="hero" id="hero" aria-labelledby="heroTitle">
       <div class="hero-copy">
         <p class="eyebrow">Personal Nutrition Check</p>
-        <h1>身体补给推荐助手</h1>
-        <p class="hero-text">先完成一份轻量测评，再生成你的营养关注报告。我们只做健康分析和补给参考，不做购买推荐。</p>
+        <h1 id="heroTitle">身体补给<br>推荐助手</h1>
+        <p class="hero-text">完成一份轻量测评，生成你的营养关注报告。我们只做健康分析和补给参考，不做购买推荐。</p>
         <div class="hero-actions">
-          <button class="primary-btn" id="startBtn">开始评估</button>
+          <button class="primary-btn" id="startBtn" aria-label="开始健康评估">开始评估</button>
         </div>
       </div>
-      <div class="hero-panel" aria-label="评估摘要示意">
-        <div class="lemon-orbit" aria-hidden="true">
+      <div class="hero-panel" aria-hidden="true">
+        <div class="lemon-orbit">
           <div class="lemon-face">Hi</div>
         </div>
         <div class="wellness-card main">
@@ -39,34 +42,40 @@
       </div>
     </section>
 
-    <section class="notice">
-      <strong>重要提示</strong>
-      <span>本工具仅用于健康与营养参考，不提供疾病诊断、治疗方案或药物建议。若你有慢性疾病、正在服药、怀孕或哺乳，请先咨询医生或营养师。</span>
+    <!-- ===== Notice ===== -->
+    <section class="notice" aria-label="重要提示">
+      <div class="notice-icon" aria-hidden="true">!</div>
+      <div>
+        <strong>重要提示</strong>
+        <p>本工具仅用于健康与营养参考，不提供疾病诊断、治疗方案或药物建议。若你有慢性疾病、正在服药、怀孕或哺乳，请先咨询医生或营养师。</p>
+      </div>
     </section>
 
-    <section class="assessment" id="assessment" hidden>
+    <!-- ===== Assessment ===== -->
+    <section class="assessment" id="assessment" hidden aria-labelledby="stepTitle">
       <header class="assessment-header">
         <div>
           <p class="eyebrow">Questionnaire</p>
           <h2 id="stepTitle">基本信息</h2>
           <p class="step-hint" id="stepHint">先了解你的基础状态，后面的推荐会更准确。</p>
         </div>
-        <span class="step-count" id="stepCount">1 / 4</span>
+        <span class="step-count" id="stepCount" aria-live="polite">1 / 4</span>
       </header>
 
       <nav class="stage-map" id="stageMap" aria-label="问卷阶段">
         <span>基本信息</span>
         <span>健康状况</span>
         <span>生活习惯</span>
-        <span>生成报告</span>
+        <span>确认提交</span>
       </nav>
 
-      <div class="progress-track" aria-hidden="true">
+      <div class="progress-track" role="progressbar" aria-valuenow="25" aria-valuemin="0" aria-valuemax="100" aria-label="问卷完成进度">
         <div class="progress-fill" id="progressFill"></div>
       </div>
       <p class="form-message" id="formMessage" role="alert"></p>
 
       <form id="healthForm" novalidate>
+        <!-- Step 0: Basic Info -->
         <div class="form-step active" data-step="0">
           <div class="field-grid">
             <label class="field">
@@ -103,12 +112,14 @@
               </select>
             </label>
             <label class="field">
-              <span>身高</span>
-              <input type="number" name="height" min="120" max="230" placeholder="例如 168 cm" required>
+              <span>身高 (cm)</span>
+              <input type="number" name="height" min="120" max="230" placeholder="例如 168" required>
+              <span class="field-hint" id="heightHint"></span>
             </label>
             <label class="field">
-              <span>体重</span>
-              <input type="number" name="weight" min="30" max="220" placeholder="例如 58 kg" required>
+              <span>体重 (kg)</span>
+              <input type="number" name="weight" min="30" max="220" placeholder="例如 58" required>
+              <span class="field-hint" id="weightHint"></span>
             </label>
             <fieldset class="field goal-field">
               <legend>主要目标（可多选）</legend>
@@ -166,17 +177,20 @@
           </div>
         </div>
 
+        <!-- Step 1: Health Risks -->
         <div class="form-step" data-step="1">
           <div class="question-list" id="healthRiskQuestions"></div>
         </div>
 
+        <!-- Step 2: Lifestyle -->
         <div class="form-step" data-step="2">
           <div class="question-list" id="lifestyleQuestions"></div>
         </div>
 
+        <!-- Step 3: Confirm -->
         <div class="form-step" data-step="3">
           <div class="review-box">
-            <div class="review-icon">OK</div>
+            <div class="review-icon" aria-hidden="true">OK</div>
             <h3>准备生成你的营养关注报告</h3>
             <p>报告会综合基础信息、健康风险、生活习惯和饮食偏好，给出关注维度、可能适合了解的营养素、食物优先建议和补剂注意事项。</p>
             <button class="primary-btn" type="button" id="submitBtn">生成建议</button>
@@ -184,32 +198,42 @@
         </div>
 
         <footer class="form-actions">
-          <button class="secondary-btn" type="button" id="prevBtn">上一步</button>
-          <button class="primary-btn" type="button" id="nextBtn">下一步</button>
+          <button class="secondary-btn" type="button" id="prevBtn" aria-label="返回上一步">上一步</button>
+          <button class="primary-btn" type="button" id="nextBtn" aria-label="进入下一步">下一步</button>
         </footer>
       </form>
     </section>
 
-    <section class="results" id="results" hidden>
+    <!-- ===== Results ===== -->
+    <section class="results" id="results" hidden aria-labelledby="resultsTitle">
       <header class="results-header">
         <div>
           <p class="eyebrow">Personal Report</p>
-          <h2>你的营养关注报告</h2>
+          <h2 id="resultsTitle">你的营养关注报告</h2>
           <p class="step-hint">这是一份参考报告，重点是帮助你发现习惯和营养关注点。</p>
         </div>
-        <button class="secondary-btn" id="restartBtn">重新评估</button>
+        <div class="results-actions">
+          <button class="secondary-btn" id="editAnswersBtn">修改答案</button>
+          <button class="secondary-btn" id="exportBtn">导出报告</button>
+          <button class="secondary-btn" id="restartBtn">重新评估</button>
+        </div>
       </header>
+
+      <!-- Summary page -->
       <section class="summary-page" id="summaryPage">
         <aside class="summary-panel">
           <h3>健康画像</h3>
           <div id="summaryTags" class="tag-list"></div>
           <div class="bmi-card" id="bmiCard"></div>
           <div class="supplement-push" id="supplementPush"></div>
+          <div class="supplement-interaction-area" id="supplementInteractionArea"></div>
           <div class="summary-advice" id="summaryAdvice"></div>
           <div class="score-list" id="scoreList"></div>
         </aside>
-        <button class="primary-btn detail-report-btn" id="detailReportBtn" type="button">生成详细报告</button>
+        <button class="primary-btn detail-report-btn" id="detailReportBtn" type="button">查看详细报告</button>
       </section>
+
+      <!-- Detail report -->
       <div class="result-layout" id="detailReport" hidden>
         <div class="recommendation-area">
           <div class="safety-card" id="safetyCard"></div>
@@ -217,12 +241,15 @@
           <div class="recommendation-grid" id="recommendationGrid"></div>
           <div class="action-card">
             <h3>下一步行动</h3>
-            <ul id="actionList"></ul>
+            <div id="actionList"></div>
           </div>
         </div>
       </div>
     </section>
   </main>
+
+  <!-- Toast notification -->
+  <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
 
   <script src="script.js"></script>
 </body>
