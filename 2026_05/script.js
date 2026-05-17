@@ -365,6 +365,24 @@ function showToast(msg) {
   toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
 }
 
+// ── Gender → specialStatus link ────────────────
+function updateSpecialStatusOptions() {
+  const genderEl = form.querySelector('[name="gender"]');
+  const specialEl = form.querySelector('[name="specialStatus"]');
+  if (!genderEl || !specialEl) return;
+  const gender = genderEl.value;
+  const pregnancyValues = ["pregnant", "preparing", "breastfeeding"];
+  specialEl.querySelectorAll("option").forEach((opt) => {
+    if (pregnancyValues.includes(opt.value)) {
+      opt.hidden = gender === "male";
+      opt.disabled = gender === "male";
+    }
+  });
+  if (gender === "male" && pregnancyValues.includes(specialEl.value)) {
+    specialEl.value = "";
+  }
+}
+
 // ── Dark mode toggle ───────────────────────────
 const DARK_MODE_KEY = "health_supplement_dark_mode";
 const html = document.documentElement;
@@ -428,6 +446,7 @@ function restoreFormData() {
       }
     }
   } catch (_) { /* ignore */ }
+  updateSpecialStatusOptions();
 }
 
 function clearFormData() {
@@ -436,6 +455,12 @@ function clearFormData() {
 
 form.addEventListener("change", saveFormData);
 form.addEventListener("input", saveFormData);
+
+// Gender → specialStatus linkage
+form.querySelector('[name="gender"]')?.addEventListener("change", () => {
+  updateSpecialStatusOptions();
+  saveFormData();
+});
 
 // ── Rendering helpers ─────────────────────────
 function renderHealthRiskQuestions() {
@@ -932,7 +957,7 @@ function renderTieredActions(tiered) {
   let html = "";
   if (total > 0) {
     html += `<div class="checklist-progress"><div class="checklist-progress-fill" style="width:${pct}%"></div></div>
-      <p style="font-size:13px;color:var(--ink-muted);margin:0 0 14px;">已完成 ${checkedCount}/${total} 项</p>`;
+      <p class="checklist-progress-text" style="font-size:13px;color:var(--ink-muted);margin:0 0 14px;">已完成 ${checkedCount}/${total} 项</p>`;
   }
   if (tiered.critical.length) {
     html += `<div class="tier-card critical-tier"><h4>本周最重要</h4>${renderItems(tiered.critical)}</div>`;
@@ -955,9 +980,9 @@ function handleChecklistChange(e) {
   const checked = [...allCheckboxes].filter((c) => c.checked).length;
   const total = allCheckboxes.length;
   const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
-  const fill = document.querySelector(".checklist-progress-fill");
+  const fill = document.querySelector("#checklistArea .checklist-progress-fill");
   if (fill) fill.style.width = pct + "%";
-  const label = document.querySelector(".action-card p");
+  const label = document.querySelector("#checklistArea .checklist-progress-text");
   if (label) label.textContent = `已完成 ${checked}/${total} 项`;
 }
 
@@ -965,15 +990,149 @@ document.addEventListener("change", (e) => {
   if (e.target.dataset.checklistId) handleChecklistChange(e);
 });
 
-// ── Meal plan rendering (Feature 7) ────────────
-function renderMealPlan(item) {
-  if (!item.mealPlan || item.highRisk) return "";
+// ── Unified meal plan (Feature 7 revised) ──────
+const unifiedMealDB = {
+  energy_normal:  { breakfast: "全麦吐司+水煮蛋+香蕉", lunch: "糙米饭+煎鸡胸+西兰花", dinner: "小米粥+嫩豆腐+蒜蓉菠菜" },
+  energy_vegetarian: { breakfast: "燕麦粥+核桃+香蕉", lunch: "糙米饭+豆腐炒蛋+西兰花", dinner: "小米粥+毛豆+蒜蓉菠菜" },
+  energy_vegan:   { breakfast: "燕麦粥+奇亚籽+香蕉", lunch: "糙米饭+烤豆腐+西兰花", dinner: "小米粥+鹰嘴豆+菠菜" },
+  skin_normal:    { breakfast: "橙子+水煮蛋+核桃", lunch: "三文鱼+牛油果+杂粮饭", dinner: "番茄豆腐汤+清炒芥蓝+蒸鸡胸" },
+  skin_vegetarian:{ breakfast: "橙子+希腊酸奶+核桃", lunch: "烤豆腐+牛油果沙拉+杂粮饭", dinner: "番茄豆腐汤+清炒芥蓝+毛豆" },
+  eye_normal:     { breakfast: "燕麦粥+蓝莓+水煮蛋", lunch: "杂粮饭+烤三文鱼+羽衣甘蓝", dinner: "蒸红薯+虾仁+胡萝卜炒蛋" },
+  fitness_normal: { breakfast: "牛奶+鸡蛋+燕麦+香蕉", lunch: "鸡胸肉+红薯+西兰花", dinner: "三文鱼+藜麦+菠菜沙拉" },
+  immunity_normal:{ breakfast: "猕猴桃+鸡蛋+全麦面包", lunch: "瘦肉炒彩椒+紫菜汤+糙米饭", dinner: "蒜蓉西兰花+煎鱼+红薯" },
+  general_normal: { breakfast: "希腊酸奶+混合莓果+核桃", lunch: "彩椒炒鸡丁+番茄+糙米饭", dinner: "菌菇蔬菜汤+蒸豆腐+拌黄瓜" },
+  default:        { breakfast: "牛奶+鸡蛋+全麦面包+水果", lunch: "杂粮饭+瘦肉+两种蔬菜", dinner: "清淡汤+豆腐/鱼+绿叶菜" }
+};
+
+function buildUnifiedMealPlan(profile, recommendations) {
+  let mealKey = "default";
+  const primaryGoal = (profile.goals && profile.goals[0]) || "general";
+  let diet = profile.dietType || "normal";
+  if (diet === "lowSugar" || diet === "lowSalt" || diet === "highProtein") diet = "normal";
+  const candidateKey = `${primaryGoal}_${diet}`;
+  if (unifiedMealDB[candidateKey]) mealKey = candidateKey;
+  else if (unifiedMealDB[`${primaryGoal}_normal`]) mealKey = `${primaryGoal}_normal`;
+
+  const meal = unifiedMealDB[mealKey];
+  let note = "基于你的测评目标、饮食类型和关注维度搭配的一日参考。";
+  if (recommendations.length > 0) {
+    note = `你当前最需关注「${recommendations[0].title}」，以下三餐侧重该方向，兼顾整体均衡。`;
+  }
+  return { ...meal, note };
+}
+
+// ── Personalized greeting (Phase 4) ────────────
+function getReportGreeting(profile, recommendations) {
+  const titleMap = {
+    energy: '你的精力提升报告',
+    skin: '你的皮肤状态报告',
+    eye: '你的护眼营养报告',
+    fitness: '你的运动恢复报告',
+    immunity: '你的免疫支持报告',
+    general: '你的综合健康报告'
+  };
+  if (profile.goals.length === 1 && titleMap[profile.goals[0]]) {
+    return titleMap[profile.goals[0]];
+  }
+  if (profile.goals.length > 1) return '你的个性化营养关注报告';
+  if (recommendations.length > 0) return `你的${recommendations[0].title}关注报告`;
+  return '你的营养关注报告';
+}
+
+// ── Nutrient gaps (Phase 5) ────────────────────
+function buildNutrientGaps(recommendations, scores, profile) {
+  const defs = [
+    { id: 'vitaminD', label: '维生素 D', dims: ['bone', 'immune'], base: 60 },
+    { id: 'calcium', label: '钙', dims: ['bone'], base: 58 },
+    { id: 'iron', label: '铁', dims: ['mineral'], base: 55, veganSensitive: true },
+    { id: 'zinc', label: '锌', dims: ['immune', 'skin'], base: 55 },
+    { id: 'magnesium', label: '镁', dims: ['sleep', 'stress', 'mineral', 'fitness'], base: 50 },
+    { id: 'omega3', label: 'Omega-3', dims: ['heart', 'eye', 'skin'], base: 50 },
+    { id: 'vitaminC', label: '维生素 C', dims: ['antioxidant', 'immune', 'skin'], base: 62 },
+    { id: 'bComplex', label: 'B 族维生素', dims: ['sleep', 'stress', 'liver'], base: 55 },
+    { id: 'fiber', label: '膳食纤维', dims: ['fiber', 'digestive', 'sugar', 'heart'], base: 48 },
+    { id: 'protein', label: '优质蛋白', dims: ['fitness', 'immune'], base: 58 },
+    { id: 'lutein', label: '叶黄素', dims: ['eye'], base: 52 },
+    { id: 'potassium', label: '钾', dims: ['heart', 'hydration'], base: 55 }
+  ];
+  return defs.map((nd) => {
+    let penalty = 0;
+    nd.dims.forEach((dim) => { penalty += (scores[dim] || 0) * 3; });
+    if (nd.veganSensitive && profile.dietType === 'vegan') penalty += 15;
+    if (nd.veganSensitive && profile.dietType === 'vegetarian') penalty += 8;
+    if (profile.exerciseFreq === '5plus' && nd.id === 'magnesium') penalty += 10;
+    const coverage = Math.max(5, Math.min(100, nd.base - penalty));
+    let status = 'good';
+    if (coverage < 40) status = 'gap';
+    else if (coverage < 65) status = 'partial';
+    return { ...nd, coverage, status };
+  }).sort((a, b) => a.coverage - b.coverage).slice(0, 6);
+}
+
+function renderNutrientGaps(gaps) {
+  if (!gaps.length) return '';
   return `
-    <div class="mini-title">一日三餐示例</div>
-    <div class="meal-plan">
-      <div class="meal-slot"><span class="meal-label">早</span>${item.mealPlan.breakfast}</div>
-      <div class="meal-slot"><span class="meal-label">午</span>${item.mealPlan.lunch}</div>
-      <div class="meal-slot"><span class="meal-label">晚</span>${item.mealPlan.dinner}</div>
+    <div class="nutrient-gap-card">
+      <h4>关键营养素覆盖预估</h4>
+      <p class="gap-note">基于你的问卷回答估算的营养素充足度，仅供趋势参考</p>
+      <div class="gap-list">
+        ${gaps.map((g) => {
+          const color = g.status === 'gap' ? 'var(--red)' : g.status === 'partial' ? '#f0ad4e' : 'var(--green)';
+          return `<div class="gap-row"><span class="gap-label">${g.label}</span><div class="gap-bar"><i style="width:${g.coverage}%;background:${color};"></i></div><span class="gap-pct">${g.coverage}%</span></div>`;
+        }).join('')}
+      </div>
+    </div>
+  `;
+}
+
+// ── Supplement timing schedule (Phase 5) ────────
+function buildSupplementSchedule(recommendations) {
+  const allNutrients = new Set();
+  recommendations.slice(0, 5).forEach((r) => {
+    r.nutrients.forEach((n) => allNutrients.add(n));
+  });
+  const timing = { morning: [], noon: [], evening: [] };
+  const rules = [
+    { re: /B.*族|B.*维生素/, slot: 'morning', note: '早晨服用有助日间能量代谢' },
+    { re: /维生素 C/, slot: 'morning', note: '早晨或随餐，可促进铁吸收' },
+    { re: /铁/, slot: 'morning', note: '早晨空腹或与VC同服更佳（遵医嘱）' },
+    { re: /维生素 D/, slot: 'noon', note: '随含脂肪的午餐服用吸收更好' },
+    { re: /Omega-3/, slot: 'noon', note: '随午餐或晚餐，搭配脂肪吸收' },
+    { re: /钙/, slot: 'noon', note: '随餐，与铁剂错开至少2小时' },
+    { re: /锌/, slot: 'noon', note: '随午餐，与钙铁错开服用' },
+    { re: /镁/, slot: 'evening', note: '睡前30-60分钟，有助放松和睡眠' },
+    { re: /蛋白/, slot: 'noon', note: '运动后或随餐补充' },
+    { re: /肌酸/, slot: 'noon', note: '运动前后服用' },
+    { re: /叶黄素/, slot: 'noon', note: '随含脂肪的餐服用' }
+  ];
+  allNutrients.forEach((nutrient) => {
+    const match = rules.find((r) => r.re.test(nutrient));
+    const slot = match ? match.slot : 'noon';
+    const note = match ? match.note : '随餐服用';
+    timing[slot].push({ nutrient, note });
+  });
+  return timing;
+}
+
+function renderSupplementSchedule(timing) {
+  const hasAny = Object.values(timing).some((arr) => arr.length > 0);
+  if (!hasAny) return '';
+  const slots = [
+    { key: 'morning', label: '上午', icon: '☀' },
+    { key: 'noon', label: '中午/下午', icon: '☁' },
+    { key: 'evening', label: '晚上', icon: '🌙' }
+  ];
+  return `
+    <div class="timing-card">
+      <h4>补充剂时间建议</h4>
+      <p class="timing-note">不同营养素在特定时间服用可优化吸收、减少干扰</p>
+      <div class="timing-slots">
+        ${slots.map((s) => {
+          const items = timing[s.key];
+          if (!items.length) return '';
+          return `<div class="timing-slot timing-${s.key}"><span class="timing-slot-icon">${s.icon}</span><strong>${s.label}</strong><ul>${items.map((i) => `<li><em>${i.nutrient}</em> — ${i.note}</li>`).join('')}</ul></div>`;
+        }).join('')}
+      </div>
     </div>
   `;
 }
@@ -1127,6 +1286,9 @@ function renderResults() {
   const recommendations = buildRecommendations(scores, highRisk);
   const bmi = calculateBmi(answers.profile);
 
+  // Phase 4: Dynamic report title
+  document.querySelector("#resultsTitle").textContent = getReportGreeting(answers.profile, recommendations);
+
   const summaryTags = document.querySelector("#summaryTags");
   const bmiCard = document.querySelector("#bmiCard");
   const supplementPush = document.querySelector("#supplementPush");
@@ -1170,6 +1332,19 @@ function renderResults() {
 
   // Score list
   scoreList.innerHTML = renderScoreList(scores);
+
+  // Phase 4: Trust notice for low-risk users
+  const trustNotice = document.querySelector("#trustNotice");
+  const allScoresLow = Object.values(scores).every((v) => v < 4);
+  if (allScoresLow && !highRisk) {
+    trustNotice.innerHTML = '<div class="trust-notice"><span class="trust-icon">✓</span><div><strong>你的生活习惯总体不错</strong><p>从问卷来看，你的饮食、作息和运动习惯整体比较健康。以下是你可以继续保持的好习惯，以及一些锦上添花的小建议。</p></div></div>';
+    trustNotice.hidden = false;
+  } else { trustNotice.hidden = true; }
+
+  // Phase 3: Checklist on summary page
+  const checklistArea = document.querySelector("#checklistArea");
+  const tiered = buildTieredActions(answers, recommendations, warnings, highRisk);
+  checklistArea.innerHTML = renderTieredActions(tiered);
 
   // Safety card
   safetyCard.classList.toggle("high-risk", warnings.length > 0);
@@ -1222,7 +1397,7 @@ function renderResults() {
             <div class="nutrients">${item.nutrients.map((n) => `<span class="nutrient">${n}</span>`).join("")}</div>
             <div class="mini-title">优先食物</div>
             <p class="food-line">${item.foods.join("、")}</p>
-            ${renderMealPlan(item)}
+            
           `}
         </div>
       </article>`;
@@ -1233,9 +1408,15 @@ function renderResults() {
         <div class="nutrients"><span class="nutrient">均衡饮食</span><span class="nutrient">规律体检</span></div>
       </article>`;
 
-  // Tiered action plan (Feature 3)
-  const tiered = buildTieredActions(answers, recommendations, warnings, highRisk);
-  actionList.innerHTML = renderTieredActions(tiered);
+  // Phase 2+5: Unified meal plan + nutrient gaps + supplement timing
+  const unifiedMeal = buildUnifiedMealPlan(answers.profile, recommendations);
+  const nutrientGaps = buildNutrientGaps(recommendations, scores, answers.profile);
+  const timingSchedule = buildSupplementSchedule(recommendations);
+  const mealNote = unifiedMeal.note;
+  const breakfast = unifiedMeal.breakfast;
+  const lunch = unifiedMeal.lunch;
+  const dinner = unifiedMeal.dinner;
+  actionList.innerHTML = '<div class="unified-meal-card"><h4>你的一日三餐参考</h4><p class="gap-note">' + mealNote + '</p><div class="meal-plan"><div class="meal-slot"><span class="meal-label">早</span>' + breakfast + '</div><div class="meal-slot"><span class="meal-label">午</span>' + lunch + '</div><div class="meal-slot"><span class="meal-label">晚</span>' + dinner + '</div></div></div>' + renderNutrientGaps(nutrientGaps) + renderSupplementSchedule(timingSchedule);
 
   // Switch view
   assessment.hidden = true;

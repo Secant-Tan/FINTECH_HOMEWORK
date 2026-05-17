@@ -1917,6 +1917,164 @@ select:focus, input:focus {
   }
 }
 
+/* ===== Trust Notice (Phase 4) ===== */
+.trust-notice {
+  display: flex;
+  gap: 14px;
+  margin-bottom: 20px;
+  padding: 16px 20px;
+  border-radius: var(--radius);
+  background: #eaf7f0;
+  border-left: 4px solid var(--green);
+}
+.trust-icon {
+  display: flex;
+  width: 32px;
+  height: 32px;
+  flex-shrink: 0;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: var(--green);
+  color: #fff;
+  font-weight: 900;
+  font-size: 16px;
+}
+.trust-notice strong {
+  display: block;
+  margin-bottom: 4px;
+  font-size: 15px;
+  color: #1e7040;
+}
+.trust-notice p {
+  margin: 0;
+  font-size: 13px;
+  color: #3a8a5a;
+  line-height: 1.55;
+}
+[data-theme="dark"] .trust-notice {
+  background: #102a1a;
+  border-left-color: var(--green);
+}
+[data-theme="dark"] .trust-notice p {
+  color: #5aad7a;
+}
+[data-theme="dark"] .trust-notice strong {
+  color: #3aaf6a;
+}
+
+/* ===== Checklist Area (Phase 3) ===== */
+.checklist-area {
+  margin-top: 24px;
+  padding-top: 20px;
+  border-top: 1px solid var(--line);
+}
+
+/* ===== Nutrient Gap Card (Phase 5) ===== */
+.nutrient-gap-card {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: #fafaf5;
+}
+.gap-note {
+  margin: 0 0 16px;
+  color: var(--ink-muted);
+  font-size: 13px;
+  line-height: 1.5;
+}
+.gap-list { display: grid; gap: 10px; }
+.gap-row {
+  display: grid;
+  grid-template-columns: 90px 1fr 40px;
+  gap: 10px;
+  align-items: center;
+}
+.gap-label {
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--ink-secondary);
+  text-align: right;
+}
+.gap-bar {
+  height: 10px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: #eee;
+}
+.gap-bar i {
+  display: block;
+  height: 100%;
+  border-radius: inherit;
+  min-width: 4px;
+  transition: width 0.6s ease;
+}
+.gap-pct {
+  font-size: 12px;
+  font-weight: 800;
+  color: var(--ink-muted);
+}
+[data-theme="dark"] .nutrient-gap-card { background: #1a1a1a; }
+[data-theme="dark"] .gap-bar { background: #333; }
+
+/* ===== Unified Meal Card (Phase 2) ===== */
+.unified-meal-card {
+  margin-bottom: 18px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: #fafaf5;
+}
+.unified-meal-card h4 {
+  margin: 0 0 8px;
+  font-size: 16px;
+}
+[data-theme="dark"] .unified-meal-card { background: #1a1a1a; }
+
+/* ===== Supplement Timing Card (Phase 5) ===== */
+.timing-card {
+  margin-top: 18px;
+  padding: 20px;
+  border-radius: var(--radius);
+  background: #fafaf5;
+}
+.timing-note {
+  margin: 0 0 16px;
+  color: var(--ink-muted);
+  font-size: 13px;
+}
+.timing-slots {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+}
+.timing-slot {
+  padding: 14px;
+  border-radius: var(--radius);
+  background: var(--surface);
+  border: 1px solid var(--line);
+}
+.timing-slot-icon { font-size: 18px; display: block; margin-bottom: 4px; }
+.timing-slot strong { display: block; margin-bottom: 8px; font-size: 14px; }
+.timing-slot ul { margin: 0; padding-left: 16px; }
+.timing-slot li {
+  margin-bottom: 6px;
+  font-size: 12px;
+  color: var(--ink-secondary);
+  line-height: 1.5;
+}
+.timing-slot li em {
+  font-style: normal;
+  font-weight: 800;
+  color: var(--ink);
+}
+[data-theme="dark"] .timing-card { background: #1a1a1a; }
+[data-theme="dark"] .timing-slot { background: #222; }
+
+@media (max-width: 700px) {
+  .timing-slots { grid-template-columns: 1fr; }
+  .gap-row { grid-template-columns: 70px 1fr 32px; }
+}
+
 /* ===== Print Styles ===== */
 @media print {
   body {
