@@ -2,7 +2,10 @@
   "permissions": {
     "allow": [
       "Bash(node -e ' *)",
-      "Bash(node -e \"new Function\\(require\\('fs'\\).readFileSync\\('script.js', 'utf8'\\)\\); console.log\\('JS Syntax: OK'\\)\")"
+      "Bash(node -e \"new Function\\(require\\('fs'\\).readFileSync\\('script.js', 'utf8'\\)\\); console.log\\('JS Syntax: OK'\\)\")",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('script.js','utf8'\\); const idx=s.indexOf\\('updateSupplementInteractions\\(\\);'\\); console.log\\(s.substring\\(idx-60, idx+40\\)\\);\")",
+      "Bash(node -e \"const s=require\\('fs'\\).readFileSync\\('script.js','utf8'\\); const lines=s.split\\('\\\\n'\\); lines.forEach\\(\\(l,i\\)=>{if\\(l.includes\\('updateSupplementInteractions\\(\\)'\\)\\) console.log\\(i+1+': '+l.trim\\(\\)\\)}\\)\")",
+      "WebSearch"
     ]
   }
 }

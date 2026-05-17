@@ -365,6 +365,31 @@ function showToast(msg) {
   toastTimer = setTimeout(() => { toast.hidden = true; }, 2600);
 }
 
+// ── Dark mode toggle ───────────────────────────
+const DARK_MODE_KEY = "health_supplement_dark_mode";
+const html = document.documentElement;
+const themeToggle = document.querySelector("#themeToggle");
+const themeIcon = themeToggle.querySelector(".theme-icon");
+
+function applyTheme(mode) {
+  html.setAttribute("data-theme", mode);
+  themeIcon.textContent = mode === "dark" ? "☀" : "🌙";
+  localStorage.setItem(DARK_MODE_KEY, mode);
+}
+
+// Restore saved theme or respect OS preference
+const savedTheme = localStorage.getItem(DARK_MODE_KEY);
+if (savedTheme) {
+  applyTheme(savedTheme);
+} else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
+  applyTheme("dark");
+}
+
+themeToggle.addEventListener("click", () => {
+  const current = html.getAttribute("data-theme");
+  applyTheme(current === "dark" ? "light" : "dark");
+});
+
 // ── localStorage ───────────────────────────────
 function saveFormData() {
   const data = new FormData(form);
@@ -844,53 +869,101 @@ function buildTieredActions(answers, recommendations, warnings, highRisk) {
   const critical = [];
   const tryActions = [];
   const maintain = [];
+  let idCounter = 0;
+  const make = (text, tier) => ({ id: `checklist-${idCounter++}`, text, tier });
 
   if (highRisk) {
-    critical.push({ text: "咨询医生或注册营养师，确认补剂安全性。", tier: "critical" });
+    critical.push(make("咨询医生或注册营养师，确认补剂安全性。", "critical"));
   }
   if (warnings.length && !highRisk) {
-    critical.push({ text: "先把安全提醒作为第一优先级，慢性疾病、用药、孕期或过敏风险需专业确认。", tier: "critical" });
+    critical.push(make("先把安全提醒作为第一优先级，慢性疾病、用药、孕期或过敏风险需专业确认。", "critical"));
   }
   if (recommendations.some((item) => item.key === "sleep")) {
-    critical.push({ text: "连续 7 天固定起床时间，下午后减少咖啡因，睡前 30 分钟减少屏幕刺激。", tier: "critical" });
+    critical.push(make("连续 7 天固定起床时间，下午后减少咖啡因，睡前 30 分钟减少屏幕刺激。", "critical"));
   }
   if (recommendations.some((item) => item.key === "sugar")) {
-    tryActions.push({ text: "把含糖饮料替换为无糖饮品，主食搭配蛋白质和蔬菜。", tier: "try" });
+    tryActions.push(make("把含糖饮料替换为无糖饮品，主食搭配蛋白质和蔬菜。", "try"));
   }
   if (recommendations.some((item) => item.key === "eye")) {
-    tryActions.push({ text: "每用眼 30-40 分钟休息 3-5 分钟，增加深绿叶菜、鸡蛋黄或鱼类摄入。", tier: "try" });
+    tryActions.push(make("每用眼 30-40 分钟休息 3-5 分钟，增加深绿叶菜、鸡蛋黄或鱼类摄入。", "try"));
   }
   if (recommendations.some((item) => item.key === "fiber" || item.key === "digestive")) {
-    tryActions.push({ text: "每周逐步增加全谷物、豆类和蔬菜，同时提高饮水量。", tier: "try" });
+    tryActions.push(make("每周逐步增加全谷物、豆类和蔬菜，同时提高饮水量。", "try"));
   }
   if (recommendations.some((item) => item.key === "stress")) {
-    tryActions.push({ text: "每天安排 10 分钟低强度散步或拉伸，降低恢复负担。", tier: "try" });
+    tryActions.push(make("每天安排 10 分钟低强度散步或拉伸，降低恢复负担。", "try"));
   }
   if (answers.profile.checkup === "long" || answers.profile.checkup === "never") {
-    maintain.push({ text: "条件允许时，体检关注血糖、血脂、肝肾功能、维生素 D、铁蛋白或 B12。", tier: "maintain" });
+    maintain.push(make("条件允许时，体检关注血糖、血脂、肝肾功能、维生素 D、铁蛋白或 B12。", "maintain"));
   }
   if (!highRisk) {
-    maintain.push({ text: "不要同时叠加多个高剂量复合补剂，注意维生素 A、D、E、K 的长期超量风险。", tier: "maintain" });
+    maintain.push(make("不要同时叠加多个高剂量复合补剂，注意维生素 A、D、E、K 的长期超量风险。", "maintain"));
   }
-  maintain.push({ text: "坚持均衡饮食、规律作息和适量运动，这是营养健康的基础。", tier: "maintain" });
+  maintain.push(make("坚持均衡饮食、规律作息和适量运动，这是营养健康的基础。", "maintain"));
 
   return { critical: critical.slice(0, 2), tryActions: tryActions.slice(0, 3), maintain: maintain.slice(0, 3) };
 }
 
+const CHECKLIST_STORAGE = "health_checklist_state";
+
+function getChecklistState() {
+  try { return JSON.parse(localStorage.getItem(CHECKLIST_STORAGE)) || {}; }
+  catch (_) { return {}; }
+}
+
+function saveChecklistState(state) {
+  localStorage.setItem(CHECKLIST_STORAGE, JSON.stringify(state));
+}
+
 function renderTieredActions(tiered) {
-  const renderItems = (items) => items.map((a) => `<li>${a.text}</li>`).join("");
+  const state = getChecklistState();
+  const allItems = [...tiered.critical, ...tiered.tryActions, ...tiered.maintain];
+  const checkedCount = allItems.filter((a) => state[a.id]).length;
+  const total = allItems.length;
+  const pct = total > 0 ? Math.round((checkedCount / total) * 100) : 0;
+
+  const renderItems = (items) => items.map((a) => `
+    <div class="action-checklist-item">
+      <input type="checkbox" id="${a.id}" data-checklist-id="${a.id}" ${state[a.id] ? "checked" : ""}>
+      <label for="${a.id}">${a.text}</label>
+    </div>
+  `).join("");
+
   let html = "";
+  if (total > 0) {
+    html += `<div class="checklist-progress"><div class="checklist-progress-fill" style="width:${pct}%"></div></div>
+      <p style="font-size:13px;color:var(--ink-muted);margin:0 0 14px;">已完成 ${checkedCount}/${total} 项</p>`;
+  }
   if (tiered.critical.length) {
-    html += `<div class="tier-card critical-tier"><h4>本周最重要</h4><ul>${renderItems(tiered.critical)}</ul></div>`;
+    html += `<div class="tier-card critical-tier"><h4>本周最重要</h4>${renderItems(tiered.critical)}</div>`;
   }
   if (tiered.tryActions.length) {
-    html += `<div class="tier-card try-tier"><h4>本周可尝试</h4><ul>${renderItems(tiered.tryActions)}</ul></div>`;
+    html += `<div class="tier-card try-tier"><h4>本周可尝试</h4>${renderItems(tiered.tryActions)}</div>`;
   }
   if (tiered.maintain.length) {
-    html += `<div class="tier-card maintain-tier"><h4>持续关注</h4><ul>${renderItems(tiered.maintain)}</ul></div>`;
+    html += `<div class="tier-card maintain-tier"><h4>持续关注</h4>${renderItems(tiered.maintain)}</div>`;
   }
   return html;
 }
+
+function handleChecklistChange(e) {
+  if (!e.target.dataset.checklistId) return;
+  const state = getChecklistState();
+  state[e.target.dataset.checklistId] = e.target.checked;
+  saveChecklistState(state);
+  const allCheckboxes = document.querySelectorAll("[data-checklist-id]");
+  const checked = [...allCheckboxes].filter((c) => c.checked).length;
+  const total = allCheckboxes.length;
+  const pct = total > 0 ? Math.round((checked / total) * 100) : 0;
+  const fill = document.querySelector(".checklist-progress-fill");
+  if (fill) fill.style.width = pct + "%";
+  const label = document.querySelector(".action-card p");
+  if (label) label.textContent = `已完成 ${checked}/${total} 项`;
+}
+
+document.addEventListener("change", (e) => {
+  if (e.target.dataset.checklistId) handleChecklistChange(e);
+});
 
 // ── Meal plan rendering (Feature 7) ────────────
 function renderMealPlan(item) {
@@ -985,6 +1058,61 @@ function buildSummaryAdvice(answers, recommendations, bmi, highRisk) {
   if (goals.includes("energy")) advice.push("你选择了精力目标，报告会重点检查早餐、咖啡因、睡眠节律和餐后困倦。");
   if (recommendations[0]) advice.push(`当前最需要优先处理的是「${recommendations[0].title}」，建议先从生活习惯和饮食结构补齐，再考虑补剂。`);
   return advice.slice(0, 4);
+}
+
+// ── Confetti (pure JS, no library) ────────────
+function launchConfetti() {
+  const container = document.querySelector("#confettiContainer");
+  const colors = ["#ffd600", "#ffe840", "#ff9800", "#ff5722", "#2ea87a", "#5d8fd6", "#e04e3d", "#f0ad4e"];
+  const shapes = ["circle", "square"];
+  const fragment = document.createDocumentFragment();
+
+  for (let i = 0; i < 90; i++) {
+    const piece = document.createElement("div");
+    piece.className = "confetti-piece";
+    piece.style.left = Math.random() * 100 + "%";
+    piece.style.backgroundColor = colors[Math.floor(Math.random() * colors.length)];
+    piece.style.animationDuration = (Math.random() * 2 + 2.2) + "s";
+    piece.style.animationDelay = Math.random() * 0.8 + "s";
+    piece.style.width = (Math.random() * 10 + 6) + "px";
+    piece.style.height = (Math.random() * 10 + 6) + "px";
+    piece.style.borderRadius = shapes[Math.floor(Math.random() * shapes.length)] === "circle" ? "50%" : "3px";
+    fragment.appendChild(piece);
+  }
+
+  container.appendChild(fragment);
+
+  // Clean up after animation ends
+  setTimeout(() => {
+    container.innerHTML = "";
+  }, 3500);
+}
+
+// ── Animated score counting ────────────────────
+function animateScore(el, target, duration) {
+  const start = performance.now();
+
+  function tick(now) {
+    const elapsed = now - start;
+    const progress = Math.min(elapsed / duration, 1);
+    // Ease-out curve
+    const eased = 1 - Math.pow(1 - progress, 3);
+    el.textContent = Math.round(target * eased);
+    if (progress < 1) {
+      requestAnimationFrame(tick);
+    } else {
+      el.textContent = target;
+    }
+  }
+
+  requestAnimationFrame(tick);
+}
+
+function animateReportScore(totalScore) {
+  const scoreEl = document.querySelector(".report-score h3 strong");
+  if (scoreEl) {
+    animateScore(scoreEl, totalScore, 1400);
+  }
 }
 
 // ── Main result rendering ──────────────────────

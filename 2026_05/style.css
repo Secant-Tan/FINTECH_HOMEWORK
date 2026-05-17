@@ -1581,6 +1581,342 @@ select:focus, input:focus {
   background: #fef0ee;
 }
 
+/* ===== Theme Toggle (Dark Mode) ===== */
+.theme-toggle {
+  position: fixed;
+  top: 20px;
+  right: 20px;
+  z-index: 900;
+  width: 44px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1.5px solid var(--line-strong);
+  border-radius: 50%;
+  background: var(--surface);
+  cursor: pointer;
+  font-size: 20px;
+  transition: all var(--transition);
+  box-shadow: var(--shadow-sm);
+}
+
+.theme-toggle:hover {
+  transform: scale(1.08);
+  box-shadow: var(--shadow);
+  border-color: var(--yellow);
+}
+
+.theme-toggle:focus-visible {
+  outline: 3px solid var(--yellow);
+  outline-offset: 3px;
+}
+
+/* ===== Dark Mode ===== */
+[data-theme="dark"] {
+  --yellow: #ffd600;
+  --yellow-light: #3d3700;
+  --yellow-warm: #2a2500;
+  --ink: #e8e8e8;
+  --ink-secondary: #aaaaaa;
+  --ink-muted: #777777;
+  --surface: #1e1e1e;
+  --bg: #141414;
+  --bg-warm: #1a1a1a;
+  --line: #2a2a2a;
+  --line-strong: #3a3a3a;
+  --shadow-sm: 0 2px 8px rgba(0,0,0,0.20);
+  --shadow: 0 8px 30px rgba(0,0,0,0.30);
+  --shadow-lg: 0 20px 50px rgba(0,0,0,0.40);
+  color-scheme: dark;
+}
+
+[data-theme="dark"] .hero-copy {
+  background: linear-gradient(135deg, rgba(255,214,0,0.08) 0%, transparent 50%), var(--surface);
+}
+
+[data-theme="dark"] .hero-copy::after {
+  border-color: rgba(255,214,0,0.08);
+}
+
+[data-theme="dark"] .hero-panel {
+  background: #1a1a1a;
+}
+
+[data-theme="dark"] .assessment {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .field,
+[data-theme="dark"] .question-card,
+[data-theme="dark"] .review-box,
+[data-theme="dark"] .summary-panel,
+[data-theme="dark"] .analysis-card,
+[data-theme="dark"] .plan-card,
+[data-theme="dark"] .recommend-card,
+[data-theme="dark"] .safety-card,
+[data-theme="dark"] .action-card,
+[data-theme="dark"] .wellness-card.main,
+[data-theme="dark"] .metric-card {
+  background: var(--surface);
+}
+
+[data-theme="dark"] select,
+[data-theme="dark"] input {
+  background: #2a2a2a;
+  border-color: var(--line);
+  color: var(--ink);
+}
+
+[data-theme="dark"] select:focus,
+[data-theme="dark"] input:focus {
+  background: #2a2518;
+}
+
+[data-theme="dark"] .choice {
+  background: #2a2a2a;
+  border-color: var(--line);
+  color: var(--ink-secondary);
+}
+
+[data-theme="dark"] .choice:hover {
+  background: #333;
+  border-color: #555;
+}
+
+[data-theme="dark"] .choice:has(input:checked) {
+  background: var(--yellow);
+  color: #111;
+  border-color: var(--yellow);
+}
+
+[data-theme="dark"] .chip-choice:has(input:checked) {
+  background: var(--yellow);
+  color: #111;
+  border-color: var(--yellow);
+}
+
+[data-theme="dark"] .tag,
+[data-theme="dark"] .nutrient {
+  background: #2a2a2a;
+  color: #ddd;
+}
+
+[data-theme="dark"] .push-list span {
+  background: var(--yellow);
+  color: #111;
+}
+
+[data-theme="dark"] .bmi-card,
+[data-theme="dark"] .supplement-push,
+[data-theme="dark"] .summary-advice,
+[data-theme="dark"] .supplement-interaction {
+  background: #1a1a1a;
+}
+
+[data-theme="dark"] .insight-grid > div,
+[data-theme="dark"] .meal-slot,
+[data-theme="dark"] .explanation-box {
+  background: #1a1a1a;
+}
+
+[data-theme="dark"] .explanation-box {
+  border-color: #4a3f10;
+  background: #1e1c10;
+}
+
+[data-theme="dark"] .score-bar {
+  background: #333;
+}
+
+[data-theme="dark"] .radar-grid polygon {
+  stroke: #333;
+}
+
+[data-theme="dark"] .radar-grid line {
+  stroke: #2a2a2a;
+}
+
+[data-theme="dark"] .radar-grid text {
+  fill: #999;
+}
+
+[data-theme="dark"] .notice,
+[data-theme="dark"] .results {
+  background: var(--bg);
+}
+
+[data-theme="dark"] .stage-map span::before {
+  background: #2a2a2a;
+}
+
+[data-theme="dark"] .stage-map span.is-done::before,
+[data-theme="dark"] .stage-map span.is-current::before {
+  background: var(--yellow);
+}
+
+[data-theme="dark"] .question-summary {
+  background: var(--surface);
+}
+
+[data-theme="dark"] .progress-track {
+  background: #2a2a2a;
+}
+
+[data-theme="dark"] .tier-card.critical-tier {
+  background: #2a2000;
+}
+
+[data-theme="dark"] .tier-card.try-tier {
+  background: #1a2230;
+}
+
+[data-theme="dark"] .tier-card.maintain-tier {
+  background: #1a1a1a;
+}
+
+[data-theme="dark"] .interaction-warn {
+  background: #2a1010;
+}
+
+[data-theme="dark"] .interaction-caution {
+  background: #2a2400;
+}
+
+[data-theme="dark"] .interaction-positive {
+  background: #102a1a;
+}
+
+[data-theme="dark"] .high-risk-banner {
+  background: #2a1010;
+}
+
+/* ===== Confetti ===== */
+.confetti-container {
+  position: fixed;
+  inset: 0;
+  pointer-events: none;
+  z-index: 9999;
+  overflow: hidden;
+}
+
+.confetti-piece {
+  position: absolute;
+  top: -40px;
+  width: 12px;
+  height: 12px;
+  animation: confettiFall linear forwards;
+}
+
+@keyframes confettiFall {
+  0% {
+    transform: translateY(0) rotate(0deg) scale(1);
+    opacity: 1;
+  }
+  80% {
+    opacity: 1;
+  }
+  100% {
+    transform: translateY(105vh) rotate(720deg) scale(0.5);
+    opacity: 0;
+  }
+}
+
+/* ===== Radar Chart Animation ===== */
+.radar-area {
+  transform-origin: 125px 118px;
+  animation: radarExpand 0.8s cubic-bezier(0.34, 1.56, 0.64, 1) both;
+}
+
+@keyframes radarExpand {
+  from {
+    transform: scale(0);
+    opacity: 0;
+  }
+  to {
+    transform: scale(1);
+    opacity: 1;
+  }
+}
+
+/* ===== Interactive Checklist ===== */
+.action-checklist-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 10px 0;
+}
+
+.action-checklist-item input[type="checkbox"] {
+  width: 20px;
+  height: 20px;
+  min-height: 20px;
+  flex-shrink: 0;
+  margin-top: 2px;
+  accent-color: var(--yellow);
+  cursor: pointer;
+}
+
+.action-checklist-item label {
+  cursor: pointer;
+  color: var(--ink-secondary);
+  font-size: 14px;
+  line-height: 1.6;
+  transition: color var(--transition), text-decoration var(--transition);
+  user-select: none;
+}
+
+.action-checklist-item input:checked + label {
+  color: var(--ink-muted);
+  text-decoration: line-through;
+  text-decoration-color: var(--yellow);
+  text-decoration-thickness: 2px;
+}
+
+.checklist-progress {
+  height: 6px;
+  margin-bottom: 16px;
+  overflow: hidden;
+  border-radius: var(--radius-full);
+  background: #eee;
+}
+
+.checklist-progress-fill {
+  height: 100%;
+  border-radius: inherit;
+  background: var(--yellow);
+  transition: width 0.4s ease;
+}
+
+[data-theme="dark"] .checklist-progress {
+  background: #333;
+}
+
+/* ===== Report Card staggered entrance ===== */
+.plan-card {
+  animation: cardSlideUp 0.5s ease both;
+}
+
+.plan-card:nth-child(1) { animation-delay: 0.05s; }
+.plan-card:nth-child(2) { animation-delay: 0.12s; }
+.plan-card:nth-child(3) { animation-delay: 0.19s; }
+.plan-card:nth-child(4) { animation-delay: 0.26s; }
+.plan-card:nth-child(5) { animation-delay: 0.33s; }
+.plan-card:nth-child(6) { animation-delay: 0.40s; }
+.plan-card:nth-child(7) { animation-delay: 0.47s; }
+.plan-card:nth-child(8) { animation-delay: 0.54s; }
+
+@keyframes cardSlideUp {
+  from {
+    opacity: 0;
+    transform: translateY(24px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
 /* ===== Print Styles ===== */
 @media print {
   body {

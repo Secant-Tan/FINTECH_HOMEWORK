@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="zh-CN">
+<html lang="zh-CN" data-theme="light">
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,6 +8,10 @@
 </head>
 <body>
   <a href="#assessment" class="skip-link">跳到主要内容</a>
+
+  <button class="theme-toggle" id="themeToggle" aria-label="切换深色模式" title="切换深色模式">
+    <span class="theme-icon" aria-hidden="true">🌙</span>
+  </button>
 
   <main class="app-shell">
     <!-- ===== Hero ===== -->
@@ -250,6 +254,9 @@
 
   <!-- Toast notification -->
   <div class="toast" id="toast" role="status" aria-live="polite" hidden></div>
+
+  <!-- Confetti container -->
+  <div class="confetti-container" id="confettiContainer" aria-hidden="true"></div>
 
   <script src="script.js"></script>
 </body>
